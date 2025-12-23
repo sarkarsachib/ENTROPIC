@@ -825,3 +825,940 @@ pub fn print_coverage_summary() {
         println!("\n⚠️  Coverage below target: {}% (need 85%+)", coverage_percent);
     }
 }
+// ============================================================================
+// COMPREHENSIVE ADDITIONAL TESTS - Extended Coverage
+// ============================================================================
+
+#[cfg(test)]
+mod extended_schema_tests {
+    use crate::schema::*;
+    use std::collections::HashMap;
+
+    #[test]
+    fn test_semantic_version_ordering() {
+        let v1 = SemanticVersion::new(0, 1, 0);
+        let v2 = SemanticVersion::new(0, 1, 1);
+        let v3 = SemanticVersion::new(0, 2, 0);
+        let v4 = SemanticVersion::new(1, 0, 0);
+        
+        assert!(v1 < v2);
+        assert!(v2 < v3);
+        assert!(v3 < v4);
+        assert!(v1 < v4);
+    }
+
+    #[test]
+    fn test_semantic_version_from_str() {
+        let version: SemanticVersion = "1.2.3".parse().unwrap();
+        assert_eq!(version.major, 1);
+        assert_eq!(version.minor, 2);
+        assert_eq!(version.patch, 3);
+        
+        // Test invalid formats
+        assert!("1.2".parse::<SemanticVersion>().is_err());
+        assert!("a.b.c".parse::<SemanticVersion>().is_err());
+        assert!("1.2.3.4".parse::<SemanticVersion>().is_err());
+    }
+
+    #[test]
+    fn test_game_dna_extreme_values() {
+        // Test with maximum reasonable values
+        let game = GameDNA::builder()
+            .name("Extreme Values Test".to_string())
+            .genre(Genre::Strategy)
+            .target_platforms(vec![TargetPlatform::PC])
+            .max_players(1000)
+            .max_entities(1_000_000)
+            .max_npc_count(100_000)
+            .target_fps(1000)
+            .max_draw_distance(100_000.0)
+            .time_scale(1000.0)
+            .build();
+        
+        assert!(game.is_ok());
+        let game = game.unwrap();
+        assert_eq!(game.max_players, 1000);
+        assert_eq!(game.max_entities, 1_000_000);
+    }
+
+    #[test]
+    fn test_game_dna_minimum_values() {
+        // Test with minimum edge values
+        let game = GameDNA::builder()
+            .name("Min Values Test".to_string())
+            .genre(Genre::Casual)
+            .target_platforms(vec![TargetPlatform::Mobile])
+            .max_players(1)
+            .max_entities(1)
+            .max_npc_count(0)
+            .target_fps(1)
+            .max_draw_distance(0.1)
+            .time_scale(0.001)
+            .build();
+        
+        assert!(game.is_ok());
+    }
+
+    #[test]
+    fn test_game_dna_all_platform_combinations() {
+        let all_platforms = vec![
+            TargetPlatform::Mobile,
+            TargetPlatform::PC,
+            TargetPlatform::Console,
+            TargetPlatform::XR,
+            TargetPlatform::CloudStreamed,
+            TargetPlatform::MultiPlatform,
+        ];
+        
+        let game = GameDNA::builder()
+            .name("Multi-Platform Test".to_string())
+            .genre(Genre::Strategy)
+            .target_platforms(all_platforms.clone())
+            .build();
+        
+        assert!(game.is_ok());
+        let game = game.unwrap();
+        assert_eq!(game.target_platforms.len(), 6);
+    }
+
+    #[test]
+    fn test_game_dna_empty_optional_fields() {
+        let game = GameDNA::builder()
+            .name("Minimal Required Fields".to_string())
+            .genre(Genre::Puzzle)
+            .target_platforms(vec![TargetPlatform::Mobile])
+            .esrb_rating(None)
+            .build()
+            .unwrap();
+        
+        assert_eq!(game.esrb_rating, None);
+        assert!(game.tags.is_empty());
+        assert!(game.custom_properties.is_empty());
+    }
+
+    #[test]
+    fn test_game_dna_large_tag_collection() {
+        let mut builder = GameDNA::builder()
+            .name("Many Tags Test".to_string())
+            .genre(Genre::RPG)
+            .target_platforms(vec![TargetPlatform::PC]);
+        
+        // Add 100 tags
+        for i in 0..100 {
+            builder = builder.tag(format!("tag_{}", i));
+        }
+        
+        let game = builder.build().unwrap();
+        assert_eq!(game.tags.len(), 100);
+    }
+
+    #[test]
+    fn test_game_dna_large_custom_properties() {
+        let mut builder = GameDNA::builder()
+            .name("Many Properties Test".to_string())
+            .genre(Genre::Simulation)
+            .target_platforms(vec![TargetPlatform::PC]);
+        
+        // Add 100 custom properties
+        for i in 0..100 {
+            builder = builder.custom_property(&format!("key_{}", i), format!("value_{}", i));
+        }
+        
+        let game = builder.build().unwrap();
+        assert_eq!(game.custom_properties.len(), 100);
+    }
+
+    #[test]
+    fn test_game_dna_special_characters_in_name() {
+        let special_names = vec![
+            "Gäme with Ümläuts",
+            "游戏名称 (Chinese)",
+            "Игра (Russian)",
+            "🎮 Game with Emoji",
+            "Game\nWith\nNewlines",
+            "Game\twith\ttabs",
+        ];
+        
+        for name in special_names {
+            let game = GameDNA::builder()
+                .name(name.to_string())
+                .genre(Genre::Casual)
+                .target_platforms(vec![TargetPlatform::Mobile])
+                .build();
+            
+            assert!(game.is_ok(), "Failed for name: {}", name);
+        }
+    }
+
+    #[test]
+    fn test_game_dna_very_long_name() {
+        let long_name = "A".repeat(1000);
+        let game = GameDNA::builder()
+            .name(long_name.clone())
+            .genre(Genre::Educational)
+            .target_platforms(vec![TargetPlatform::PC])
+            .build();
+        
+        assert!(game.is_ok());
+        assert_eq!(game.unwrap().name.len(), 1000);
+    }
+
+    #[test]
+    fn test_custom_enum_variants_with_special_chars() {
+        let custom_genre = Genre::CustomGenre("Action/Adventure & RPG (HD)".to_string());
+        let json = serde_json::to_string(&custom_genre).unwrap();
+        let deserialized: Genre = serde_json::from_str(&json).unwrap();
+        assert_eq!(custom_genre, deserialized);
+    }
+
+    #[test]
+    fn test_game_dna_mutability() {
+        let mut game = GameDNA::minimal("Mutable Test".to_string(), Genre::FPS, vec![TargetPlatform::PC]);
+        
+        // Test that fields can be modified
+        game.name = "Modified Name".to_string();
+        game.max_players = 8;
+        game.tags.push("modified".to_string());
+        game.custom_properties.insert("new_key".to_string(), "new_value".to_string());
+        
+        assert_eq!(game.name, "Modified Name");
+        assert_eq!(game.max_players, 8);
+        assert_eq!(game.tags.len(), 1);
+        assert_eq!(game.custom_properties.len(), 1);
+    }
+
+    #[test]
+    fn test_game_dna_clone() {
+        let original = GameDNA::minimal("Clone Test".to_string(), Genre::Horror, vec![TargetPlatform::Console]);
+        let cloned = original.clone();
+        
+        assert_eq!(original.name, cloned.name);
+        assert_eq!(original.id, cloned.id);
+        assert_eq!(original.genre, cloned.genre);
+    }
+
+    #[test]
+    fn test_all_boolean_flags_combinations() {
+        // Test with all boolean flags set to true
+        let game_all_true = GameDNA::builder()
+            .name("All True".to_string())
+            .genre(Genre::RPG)
+            .target_platforms(vec![TargetPlatform::PC])
+            .is_competitive(true)
+            .supports_coop(true)
+            .weather_enabled(true)
+            .seasons_enabled(true)
+            .day_night_cycle(true)
+            .persistent_world(true)
+            .ai_enabled(true)
+            .ai_difficulty_scaling(true)
+            .has_campaign(true)
+            .has_side_quests(true)
+            .dynamic_quests(true)
+            .build()
+            .unwrap();
+        
+        assert!(game_all_true.is_competitive);
+        assert!(game_all_true.weather_enabled);
+        
+        // Test with all boolean flags set to false
+        let game_all_false = GameDNA::builder()
+            .name("All False".to_string())
+            .genre(Genre::Puzzle)
+            .target_platforms(vec![TargetPlatform::Mobile])
+            .is_competitive(false)
+            .supports_coop(false)
+            .weather_enabled(false)
+            .seasons_enabled(false)
+            .day_night_cycle(false)
+            .persistent_world(false)
+            .ai_enabled(false)
+            .ai_difficulty_scaling(false)
+            .has_campaign(false)
+            .has_side_quests(false)
+            .dynamic_quests(false)
+            .build()
+            .unwrap();
+        
+        assert!(!game_all_false.is_competitive);
+        assert!(!game_all_false.weather_enabled);
+    }
+}
+
+#[cfg(test)]
+mod extended_serialization_tests {
+    use crate::schema::*;
+    use crate::serialization::*;
+
+    #[test]
+    fn test_json_with_unicode_content() {
+        let game = GameDNA::builder()
+            .name("Unicode Game: 日本語ゲーム 🎮".to_string())
+            .genre(Genre::CustomGenre("アクション".to_string()))
+            .target_platforms(vec![TargetPlatform::Mobile])
+            .custom_property("unicode_key", "値")
+            .tag("日本")
+            .build()
+            .unwrap();
+        
+        let json = to_json_string(&game).unwrap();
+        let deserialized = from_json_str(&json).unwrap();
+        
+        assert_eq!(game.name, deserialized.name);
+        assert_eq!(game.genre, deserialized.genre);
+    }
+
+    #[test]
+    fn test_json_with_escaped_characters() {
+        let game = GameDNA::builder()
+            .name("Game with \"quotes\" and \\backslashes\\".to_string())
+            .genre(Genre::Casual)
+            .target_platforms(vec![TargetPlatform::PC])
+            .custom_property("path", "C:\\Users\\Game\\")
+            .build()
+            .unwrap();
+        
+        let json = to_json_string(&game).unwrap();
+        let deserialized = from_json_str(&json).unwrap();
+        
+        assert_eq!(game.name, deserialized.name);
+        assert_eq!(game.custom_properties, deserialized.custom_properties);
+    }
+
+    #[test]
+    fn test_json_nested_custom_properties() {
+        let game = GameDNA::builder()
+            .name("Nested Properties Test".to_string())
+            .genre(Genre::Strategy)
+            .target_platforms(vec![TargetPlatform::PC])
+            .custom_property("config.graphics.quality", "ultra")
+            .custom_property("config.audio.volume", "100")
+            .custom_property("gameplay.difficulty.level", "hard")
+            .build()
+            .unwrap();
+        
+        let json = to_json_string(&game).unwrap();
+        let deserialized = from_json_str(&json).unwrap();
+        
+        assert_eq!(game.custom_properties.len(), deserialized.custom_properties.len());
+    }
+
+    #[test]
+    fn test_serialization_stability_across_multiple_rounds() {
+        let game = GameDNA::minimal("Stability Test".to_string(), Genre::Racing, vec![TargetPlatform::Console]);
+        
+        // Serialize and deserialize 10 times
+        let mut current_json = to_json_string(&game).unwrap();
+        for _ in 0..10 {
+            let deserialized = from_json_str(&current_json).unwrap();
+            current_json = to_json_string(&deserialized).unwrap();
+        }
+        
+        let final_game = from_json_str(&current_json).unwrap();
+        assert_eq!(game.name, final_game.name);
+        assert_eq!(game.genre, final_game.genre);
+    }
+
+    #[test]
+    fn test_json_empty_arrays_and_objects() {
+        let game = GameDNA::builder()
+            .name("Empty Collections".to_string())
+            .genre(Genre::Casual)
+            .target_platforms(vec![TargetPlatform::Mobile])
+            .build()
+            .unwrap();
+        
+        let json = to_json_string(&game).unwrap();
+        
+        // Verify that empty arrays and objects are correctly represented
+        assert!(json.contains("\"tags\":[]"));
+        assert!(json.contains("\"custom_properties\":{}"));
+    }
+
+    #[test]
+    fn test_json_very_large_structure() {
+        let mut builder = GameDNA::builder()
+            .name("Large Structure Test".to_string())
+            .genre(Genre::RPG)
+            .target_platforms(vec![
+                TargetPlatform::PC, 
+                TargetPlatform::Console,
+                TargetPlatform::Mobile,
+                TargetPlatform::XR,
+            ]);
+        
+        // Add many tags and properties
+        for i in 0..200 {
+            builder = builder
+                .tag(format!("tag_{}", i))
+                .custom_property(&format!("key_{}", i), format!("value_{}", i));
+        }
+        
+        let game = builder.build().unwrap();
+        let json = to_json_string(&game).unwrap();
+        let deserialized = from_json_str(&json).unwrap();
+        
+        assert_eq!(game.tags.len(), deserialized.tags.len());
+        assert_eq!(game.custom_properties.len(), deserialized.custom_properties.len());
+    }
+
+    #[test]
+    fn test_malformed_json_handling() {
+        let malformed_jsons = vec![
+            "{ incomplete",
+            "{\"name\": }",
+            "{\"name\": \"test\", \"genre\": invalid}",
+            "not json at all",
+            "",
+            "null",
+            "[]",
+        ];
+        
+        for malformed in malformed_jsons {
+            let result = from_json_str(malformed);
+            assert!(result.is_err(), "Should fail for: {}", malformed);
+        }
+    }
+
+    #[test]
+    fn test_json_with_extra_fields() {
+        // JSON with fields that don't exist in GameDNA
+        let json_with_extra = r#"{
+            "id": "test-id",
+            "name": "Test Game",
+            "version": {"major": 0, "minor": 1, "patch": 0},
+            "genre": "FPS",
+            "camera": "Perspective3D",
+            "tone": "Realistic",
+            "world_scale": "MediumLevel",
+            "target_platforms": ["PC"],
+            "extra_field_1": "should be ignored",
+            "extra_field_2": 12345,
+            "physics_profile": "SemiRealistic",
+            "max_players": 1,
+            "is_competitive": false,
+            "supports_coop": false,
+            "difficulty": "Medium",
+            "monetization": "PremiumBuy",
+            "target_audience": "General",
+            "target_fps": 60,
+            "max_draw_distance": 1000.0,
+            "max_entities": 1000,
+            "max_npc_count": 100,
+            "time_scale": 1.0,
+            "weather_enabled": false,
+            "seasons_enabled": false,
+            "day_night_cycle": false,
+            "persistent_world": false,
+            "npc_count": 0,
+            "ai_enabled": false,
+            "ai_difficulty_scaling": false,
+            "has_campaign": true,
+            "has_side_quests": false,
+            "dynamic_quests": false,
+            "tags": [],
+            "custom_properties": {},
+            "created_at": "2024-01-01T00:00:00Z",
+            "last_modified": "2024-01-01T00:00:00Z"
+        }"#;
+        
+        let result = from_json_str(json_with_extra);
+        assert!(result.is_ok());
+        let game = result.unwrap();
+        assert_eq!(game.name, "Test Game");
+    }
+
+    #[test]
+    fn test_byte_serialization_consistency() {
+        let game = GameDNA::minimal("Byte Test".to_string(), Genre::Simulation, vec![TargetPlatform::PC]);
+        
+        let bytes1 = to_json_vec(&game).unwrap();
+        let bytes2 = to_json_vec(&game).unwrap();
+        
+        // Same input should produce same byte output
+        assert_eq!(bytes1, bytes2);
+    }
+}
+
+#[cfg(test)]
+mod extended_version_tests {
+    use crate::version::*;
+    use crate::schema::*;
+
+    #[test]
+    fn test_version_parsing_edge_cases() {
+        // Test zero versions
+        assert!(VersionManager::validate_version_format("0.0.0").is_ok());
+        
+        // Test large version numbers
+        assert!(VersionManager::validate_version_format("999.999.999").is_ok());
+        
+        // Test leading zeros (should fail)
+        assert!(VersionManager::validate_version_format("01.02.03").is_err());
+        
+        // Test negative numbers (should fail)
+        assert!(VersionManager::validate_version_format("-1.0.0").is_err());
+        assert!(VersionManager::validate_version_format("1.-1.0").is_err());
+        assert!(VersionManager::validate_version_format("1.0.-1").is_err());
+    }
+
+    #[test]
+    fn test_compare_versions_edge_cases() {
+        let manager = VersionManager::new();
+        
+        // Compare same version
+        assert_eq!(manager.compare_versions("1.0.0", "1.0.0").unwrap(), std::cmp::Ordering::Equal);
+        
+        // Test all three components
+        assert_eq!(manager.compare_versions("1.0.0", "2.0.0").unwrap(), std::cmp::Ordering::Less);
+        assert_eq!(manager.compare_versions("1.1.0", "1.2.0").unwrap(), std::cmp::Ordering::Less);
+        assert_eq!(manager.compare_versions("1.0.1", "1.0.2").unwrap(), std::cmp::Ordering::Less);
+        
+        // Test version with zeros
+        assert_eq!(manager.compare_versions("0.0.1", "0.0.2").unwrap(), std::cmp::Ordering::Less);
+    }
+
+    #[test]
+    fn test_semantic_version_edge_cases() {
+        let v1 = SemanticVersion::new(0, 0, 0);
+        assert_eq!(v1.to_string(), "0.0.0");
+        
+        let v2 = SemanticVersion::new(999, 999, 999);
+        assert_eq!(v2.to_string(), "999.999.999");
+        
+        // Test default version
+        let default_v = SemanticVersion::default_version();
+        assert_eq!(default_v.to_string(), CURRENT_VERSION);
+    }
+
+    #[test]
+    fn test_version_compatibility_boundary_cases() {
+        let manager = VersionManager::new();
+        
+        // Test current version
+        assert!(manager.is_compatible(CURRENT_VERSION));
+        
+        // Test versions close to current
+        assert!(!manager.is_compatible("0.0.9"));
+        assert!(!manager.is_compatible("0.1.1"));
+        assert!(!manager.is_compatible("0.2.0"));
+    }
+
+    #[test]
+    fn test_migration_path_complex_scenarios() {
+        use crate::version::{Migration, MigrationManager};
+        
+        let mut manager = MigrationManager::new();
+        
+        // Create a chain of migrations
+        struct Migration1;
+        impl Migration for Migration1 {
+            fn from_version(&self) -> &str { "0.1.0" }
+            fn to_version(&self) -> &str { "0.2.0" }
+            fn migrate(&self, dna: GameDNA) -> Result<GameDNA, VersionError> { Ok(dna) }
+        }
+        
+        struct Migration2;
+        impl Migration for Migration2 {
+            fn from_version(&self) -> &str { "0.2.0" }
+            fn to_version(&self) -> &str { "0.3.0" }
+            fn migrate(&self, dna: GameDNA) -> Result<GameDNA, VersionError> { Ok(dna) }
+        }
+        
+        manager.add_migration(Migration1);
+        manager.add_migration(Migration2);
+        
+        // Test finding path through multiple migrations
+        let path = manager.find_migration_path("0.1.0", "0.3.0");
+        assert!(path.is_some());
+        let path = path.unwrap();
+        assert_eq!(path.len(), 2);
+    }
+}
+
+#[cfg(test)]
+mod extended_error_tests {
+    use crate::errors::*;
+
+    #[test]
+    fn test_parse_error_variants() {
+        let errors = vec![
+            ParseError::InvalidJson {
+                reason: "test".to_string(),
+                json_snippet: "{}".to_string(),
+            },
+            ParseError::InvalidMessagePack {
+                reason: "test".to_string(),
+            },
+            ParseError::MissingField {
+                field_name: "name".to_string(),
+                context: "root".to_string(),
+            },
+            ParseError::InvalidFieldValue {
+                field_name: "fps".to_string(),
+                value: "0".to_string(),
+                reason: "too low".to_string(),
+            },
+            ParseError::InvalidUuid {
+                uuid: "invalid".to_string(),
+                help: "use valid UUID".to_string(),
+            },
+        ];
+        
+        for error in errors {
+            let display = format!("{}", error);
+            assert!(!display.is_empty());
+        }
+    }
+
+    #[test]
+    fn test_schema_error_variants() {
+        let error1 = SchemaError::InvalidField {
+            field_name: "test".to_string(),
+            description: "desc".to_string(),
+            suggestion: "sugg".to_string(),
+        };
+        assert!(format!("{}", error1).contains("test"));
+        
+        let error2 = SchemaError::IncompatibleConfiguration {
+            description: "incompatible".to_string(),
+            conflicting_fields: vec!["field1".to_string(), "field2".to_string()],
+            suggestion: "fix it".to_string(),
+        };
+        assert!(format!("{}", error2).contains("incompatible"));
+        
+        let error3 = SchemaError::MissingRequiredFields {
+            fields: vec!["name".to_string(), "genre".to_string()],
+        };
+        assert!(format!("{}", error3).contains("name"));
+        
+        let error4 = SchemaError::InvalidEnum {
+            description: "bad enum".to_string(),
+            valid_options: vec!["opt1".to_string(), "opt2".to_string()],
+            suggestion: "use valid option".to_string(),
+        };
+        assert!(format!("{}", error4).contains("bad enum"));
+    }
+
+    #[test]
+    fn test_serialization_error_variants() {
+        let errors = vec![
+            SerializationError::JsonSerialization { reason: "test".to_string() },
+            SerializationError::JsonDeserialization { reason: "test".to_string() },
+            SerializationError::MessagePackSerialization { reason: "test".to_string() },
+            SerializationError::MessagePackDeserialization { reason: "test".to_string() },
+            SerializationError::ProtobufEncoding { reason: "test".to_string() },
+            SerializationError::ProtobufDecoding { reason: "test".to_string() },
+            SerializationError::EncodingError {
+                type_name: "GameDNA".to_string(),
+                details: "failed".to_string(),
+            },
+            SerializationError::DecodingError {
+                type_name: "GameDNA".to_string(),
+                details: "failed".to_string(),
+            },
+        ];
+        
+        for error in errors {
+            let display = format!("{}", error);
+            assert!(!display.is_empty());
+        }
+    }
+
+    #[test]
+    fn test_version_error_variants() {
+        let errors = vec![
+            VersionError::VersionMismatch {
+                current_version: "0.1.0".to_string(),
+                target_version: "0.2.0".to_string(),
+                help: "upgrade".to_string(),
+            },
+            VersionError::IncompatibleVersion {
+                reason: "breaking change".to_string(),
+                current_version: "1.0.0".to_string(),
+                requested_version: "2.0.0".to_string(),
+                migration_available: false,
+            },
+            VersionError::MigrationNotAvailable {
+                from_version: "0.1.0".to_string(),
+                to_version: "1.0.0".to_string(),
+                help: "no migration".to_string(),
+            },
+            VersionError::InvalidVersionFormat {
+                version: "a.b.c".to_string(),
+                reason: "invalid".to_string(),
+                expected_format: "X.Y.Z".to_string(),
+            },
+            VersionError::VersionDowngrade {
+                from: "1.0.0".to_string(),
+                to: "0.9.0".to_string(),
+            },
+        ];
+        
+        for error in errors {
+            let display = format!("{}", error);
+            assert!(!display.is_empty());
+        }
+    }
+
+    #[test]
+    fn test_error_debug_formatting() {
+        let error = ParseError::InvalidJson {
+            reason: "test".to_string(),
+            json_snippet: "{}".to_string(),
+        };
+        
+        let debug = format!("{:?}", error);
+        assert!(debug.contains("ParseError"));
+        assert!(debug.contains("InvalidJson"));
+    }
+}
+
+#[cfg(test)]
+mod stress_tests {
+    use crate::schema::*;
+    use crate::serialization::*;
+
+    #[test]
+    fn test_create_many_games() {
+        // Stress test: create 1000 games
+        let games: Vec<GameDNA> = (0..1000)
+            .map(|i| {
+                GameDNA::minimal(
+                    format!("Game {}", i),
+                    Genre::FPS,
+                    vec![TargetPlatform::PC],
+                )
+            })
+            .collect();
+        
+        assert_eq!(games.len(), 1000);
+        
+        // Verify all have unique IDs
+        let mut ids = std::collections::HashSet::new();
+        for game in &games {
+            ids.insert(game.id.clone());
+        }
+        assert_eq!(ids.len(), 1000);
+    }
+
+    #[test]
+    fn test_serialize_many_games() {
+        let games: Vec<GameDNA> = (0..100)
+            .map(|i| {
+                GameDNA::minimal(
+                    format!("Game {}", i),
+                    Genre::RPG,
+                    vec![TargetPlatform::Console],
+                )
+            })
+            .collect();
+        
+        // Serialize all games
+        let jsons: Vec<String> = games
+            .iter()
+            .map(|game| to_json_string(game).unwrap())
+            .collect();
+        
+        assert_eq!(jsons.len(), 100);
+        
+        // Deserialize all games
+        let deserialized: Vec<GameDNA> = jsons
+            .iter()
+            .map(|json| from_json_str(json).unwrap())
+            .collect();
+        
+        assert_eq!(deserialized.len(), 100);
+    }
+
+    #[test]
+    fn test_deep_nesting_custom_properties() {
+        let mut builder = GameDNA::builder()
+            .name("Deep Nesting Test".to_string())
+            .genre(Genre::Strategy)
+            .target_platforms(vec![TargetPlatform::PC]);
+        
+        // Create deeply nested property keys
+        for depth in 0..50 {
+            let key = format!("level{}.sublevel{}.value", depth, depth);
+            builder = builder.custom_property(&key, format!("data_{}", depth));
+        }
+        
+        let game = builder.build().unwrap();
+        assert_eq!(game.custom_properties.len(), 50);
+    }
+
+    #[test]
+    fn test_extreme_tag_lengths() {
+        let long_tag = "A".repeat(10000);
+        let game = GameDNA::builder()
+            .name("Long Tag Test".to_string())
+            .genre(Genre::Casual)
+            .target_platforms(vec![TargetPlatform::Mobile])
+            .tag(long_tag.clone())
+            .build()
+            .unwrap();
+        
+        assert_eq!(game.tags[0].len(), 10000);
+    }
+
+    #[test]
+    fn test_rapid_serialization_deserialization() {
+        let game = GameDNA::minimal("Rapid Test".to_string(), Genre::Racing, vec![TargetPlatform::PC]);
+        
+        // Rapidly serialize/deserialize 100 times
+        for _ in 0..100 {
+            let json = to_json_string(&game).unwrap();
+            let _ = from_json_str(&json).unwrap();
+        }
+    }
+}
+
+#[cfg(test)]
+mod integration_scenarios {
+    use crate::schema::*;
+    use crate::serialization::*;
+
+    #[test]
+    fn test_complete_rpg_game_configuration() {
+        let rpg = GameDNA::builder()
+            .name("Epic Fantasy Quest".to_string())
+            .genre(Genre::RPG)
+            .camera(CameraMode::Perspective3D)
+            .tone(Tone::Cinematic)
+            .world_scale(WorldScale::OpenWorld)
+            .target_platforms(vec![TargetPlatform::PC, TargetPlatform::Console])
+            .physics_profile(PhysicsProfile::SemiRealistic)
+            .max_players(1)
+            .is_competitive(false)
+            .supports_coop(false)
+            .difficulty(DifficultyMode::Dynamic)
+            .monetization(MonetizationModel::PremiumBuy)
+            .target_audience("Mature Gamers".to_string())
+            .esrb_rating(Some("M".to_string()))
+            .target_fps(60)
+            .max_draw_distance(5000.0)
+            .max_entities(10000)
+            .max_npc_count(500)
+            .time_scale(1.0)
+            .weather_enabled(true)
+            .seasons_enabled(true)
+            .day_night_cycle(true)
+            .persistent_world(true)
+            .npc_count(300)
+            .ai_enabled(true)
+            .ai_difficulty_scaling(true)
+            .has_campaign(true)
+            .has_side_quests(true)
+            .dynamic_quests(true)
+            .tag("fantasy".to_string())
+            .tag("open-world".to_string())
+            .tag("single-player".to_string())
+            .custom_property("magic_system", "true")
+            .custom_property("class_count", "12")
+            .build()
+            .unwrap();
+        
+        // Verify configuration makes sense
+        assert!(rpg.has_campaign);
+        assert!(rpg.ai_enabled);
+        assert!(rpg.weather_enabled);
+        
+        // Test serialization
+        let json = to_json_string(&rpg).unwrap();
+        let deserialized = from_json_str(&json).unwrap();
+        assert_eq!(rpg.name, deserialized.name);
+    }
+
+    #[test]
+    fn test_complete_fps_game_configuration() {
+        let fps = GameDNA::builder()
+            .name("Tactical Shooter Alpha".to_string())
+            .genre(Genre::FPS)
+            .camera(CameraMode::Perspective3D)
+            .tone(Tone::Realistic)
+            .world_scale(WorldScale::LargeLevel)
+            .target_platforms(vec![TargetPlatform::PC, TargetPlatform::Console])
+            .physics_profile(PhysicsProfile::Realistic)
+            .max_players(64)
+            .is_competitive(true)
+            .supports_coop(true)
+            .difficulty(DifficultyMode::Hard)
+            .monetization(MonetizationModel::FreeToPlay)
+            .target_audience("Hardcore Gamers".to_string())
+            .esrb_rating(Some("M".to_string()))
+            .target_fps(144)
+            .max_draw_distance(2000.0)
+            .max_entities(5000)
+            .max_npc_count(0)
+            .time_scale(1.0)
+            .weather_enabled(true)
+            .seasons_enabled(false)
+            .day_night_cycle(true)
+            .persistent_world(false)
+            .npc_count(0)
+            .ai_enabled(false)
+            .ai_difficulty_scaling(false)
+            .has_campaign(false)
+            .has_side_quests(false)
+            .dynamic_quests(false)
+            .tag("multiplayer".to_string())
+            .tag("competitive".to_string())
+            .tag("tactical".to_string())
+            .custom_property("weapons_count", "50")
+            .custom_property("maps_count", "12")
+            .build()
+            .unwrap();
+        
+        // Verify FPS-specific configuration
+        assert!(fps.is_competitive);
+        assert_eq!(fps.max_players, 64);
+        assert_eq!(fps.target_fps, 144);
+        assert!(!fps.has_campaign);
+    }
+
+    #[test]
+    fn test_mobile_casual_game_configuration() {
+        let casual = GameDNA::builder()
+            .name("Puzzle Mania".to_string())
+            .genre(Genre::Puzzle)
+            .camera(CameraMode::Perspective2D)
+            .tone(Tone::Stylized)
+            .world_scale(WorldScale::TinyLevel)
+            .target_platforms(vec![TargetPlatform::Mobile])
+            .physics_profile(PhysicsProfile::Arcade)
+            .max_players(1)
+            .is_competitive(false)
+            .supports_coop(false)
+            .difficulty(DifficultyMode::Easy)
+            .monetization(MonetizationModel::FreeToPlay)
+            .target_audience("Casual Gamers".to_string())
+            .esrb_rating(Some("E".to_string()))
+            .target_fps(60)
+            .max_draw_distance(100.0)
+            .max_entities(100)
+            .max_npc_count(0)
+            .time_scale(1.0)
+            .weather_enabled(false)
+            .seasons_enabled(false)
+            .day_night_cycle(false)
+            .persistent_world(false)
+            .npc_count(0)
+            .ai_enabled(false)
+            .ai_difficulty_scaling(false)
+            .has_campaign(false)
+            .has_side_quests(false)
+            .dynamic_quests(false)
+            .tag("casual".to_string())
+            .tag("puzzle".to_string())
+            .tag("mobile".to_string())
+            .custom_property("level_count", "100")
+            .build()
+            .unwrap();
+        
+        // Verify mobile casual configuration
+        assert_eq!(casual.target_platforms[0], TargetPlatform::Mobile);
+        assert!(!casual.weather_enabled);
+        assert_eq!(casual.max_entities, 100);
+    }
+}
