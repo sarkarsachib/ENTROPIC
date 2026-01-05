@@ -825,3 +825,457 @@ pub fn print_coverage_summary() {
         println!("\n⚠️  Coverage below target: {}% (need 85%+)", coverage_percent);
     }
 }
+
+#[cfg(test)]
+mod validation_tests {
+    use crate::schema::*;
+    use crate::validation::*;
+    
+    #[test]
+    fn test_validation_engine_creation() {
+        let engine = ValidationEngine::new();
+        // Just ensure it can be created
+        assert!(matches!(*engine, ValidationEngine));
+    }
+    
+    #[test]
+    fn test_validation_result_operations() {
+        let mut result = ValidationResult::new();
+        assert!(result.is_valid);
+        assert!(result.errors.is_empty());
+        assert!(result.warnings.is_empty());
+        assert!(result.suggestions.is_empty());
+        
+        // Add an error
+        result.add_error(ValidationError::new(
+            "TEST_ERROR".to_string(),
+            "test_field".to_string(),
+            "Test error message".to_string(),
+            "Test error details".to_string(),
+        ));
+        
+        assert!(!result.is_valid);
+        assert_eq!(result.errors.len(), 1);
+        assert_eq!(result.errors[0].code, "TEST_ERROR");
+        
+        // Add a warning
+        result.add_warning(ValidationWarning::new(
+            "TEST_WARNING".to_string(),
+            "test_field".to_string(),
+            "Test warning message".to_string(),
+            "Test warning suggestion".to_string(),
+        ));
+        
+        assert_eq!(result.warnings.len(), 1);
+        
+        // Add a suggestion
+        result.add_suggestion("Test suggestion".to_string());
+        assert_eq!(result.suggestions.len(), 1);
+        
+        // Test merging
+        let mut other_result = ValidationResult::new();
+        other_result.add_error(ValidationError::new(
+            "ANOTHER_ERROR".to_string(),
+            "another_field".to_string(),
+            "Another error".to_string(),
+            "Another details".to_string(),
+        ));
+        
+        result.merge(other_result);
+        assert_eq!(result.errors.len(), 2);
+        assert!(!result.is_valid);
+    }
+    
+    #[test]
+    fn test_basic_field_validation() {
+        let engine = ValidationEngine::new();
+        
+        // Test empty name
+        let mut game = GameDNA::minimal("Test".to_string(), Genre::FPS, vec![TargetPlatform::PC]);
+        game.name = String::new();
+        
+        let result = engine.validate(&game);
+        assert!(!result.is_valid);
+        assert!(result.errors.iter().any(|e| e.code == "EMPTY_NAME"));
+        
+        // Test empty platforms
+        let mut game = GameDNA::minimal("Test".to_string(), Genre::FPS, vec![TargetPlatform::PC]);
+        game.target_platforms = vec![];
+        
+        let result = engine.validate(&game);
+        assert!(!result.is_valid);
+        assert!(result.errors.iter().any(|e| e.code == "NO_TARGET_PLATFORMS"));
+    }
+    
+    #[test]
+    fn test_genre_camera_compatibility() {
+        let engine = ValidationEngine::new();
+        
+        // FPS with 2D camera should fail
+        let game = GameDNA::builder()
+            .name("FPS Game".to_string())
+            .genre(Genre::FPS)
+            .camera(CameraMode::Perspective2D)
+            .target_platforms(vec![TargetPlatform::PC])
+            .build()
+            .unwrap();
+        
+        let result = engine.validate(&game);
+        assert!(!result.is_valid);
+        assert!(result.errors.iter().any(|e| e.code == "INCOMPATIBLE_CAMERA_FOR_GENRE"));
+        
+        // FPS with 3D camera should pass
+        let game = GameDNA::builder()
+            .name("FPS Game".to_string())
+            .genre(Genre::FPS)
+            .camera(CameraMode::Perspective3D)
+            .target_platforms(vec![TargetPlatform::PC])
+            .build()
+            .unwrap();
+        
+        let result = engine.validate(&game);
+        // Should be valid (no camera errors at least)
+        assert!(!result.errors.iter().any(|e| e.code == "INCOMPATIBLE_CAMERA_FOR_GENRE"));
+    }
+    
+    #[test]
+    fn test_scale_platform_compatibility() {
+        let engine = ValidationEngine::new();
+        
+        // Galaxy scale on mobile should fail
+        let game = GameDNA::builder()
+            .name("Galaxy Game".to_string())
+            .genre(Genre::Simulation)
+            .world_scale(WorldScale::Galaxy)
+            .target_platforms(vec![TargetPlatform::Mobile])
+            .build()
+            .unwrap();
+        
+        let result = engine.validate(&game);
+        assert!(!result.is_valid);
+        assert!(result.errors.iter().any(|e| e.code == "SCALE_NOT_SUPPORTED_ON_MOBILE"));
+        
+        // Galaxy scale on PC should be ok
+        let game = GameDNA::builder()
+            .name("Galaxy Game".to_string())
+            .genre(Genre::Simulation)
+            .world_scale(WorldScale::Galaxy)
+            .target_platforms(vec![TargetPlatform::PC])
+            .build()
+            .unwrap();
+        
+        let result = engine.validate(&game);
+        assert!(!result.errors.iter().any(|e| e.code == "SCALE_NOT_SUPPORTED_ON_MOBILE"));
+    }
+    
+    #[test]
+    fn test_performance_constraints() {
+        let engine = ValidationEngine::new();
+        
+        // Zero FPS should fail
+        let game = GameDNA::builder()
+            .name("Test Game".to_string())
+            .genre(Genre::FPS)
+            .target_fps(0)
+            .target_platforms(vec![TargetPlatform::PC])
+            .build()
+            .unwrap();
+        
+        let result = engine.validate(&game);
+        assert!(!result.is_valid);
+        assert!(result.errors.iter().any(|e| e.code == "ZERO_FPS"));
+        
+        // Very high FPS should warn
+        let game = GameDNA::builder()
+            .name("Test Game".to_string())
+            .genre(Genre::FPS)
+            .target_fps(240)
+            .target_platforms(vec![TargetPlatform::PC])
+            .build()
+            .unwrap();
+        
+        let result = engine.validate(&game);
+        assert!(result.warnings.iter().any(|w| w.code == "HIGH_FPS_TARGET"));
+    }
+    
+    #[test]
+    fn test_campaign_quest_logic() {
+        let engine = ValidationEngine::new();
+        
+        // Dynamic quests without AI should fail
+        let game = GameDNA::builder()
+            .name("Test Game".to_string())
+            .genre(Genre::RPG)
+            .dynamic_quests(true)
+            .ai_enabled(false)
+            .target_platforms(vec![TargetPlatform::PC])
+            .build()
+            .unwrap();
+        
+        let result = engine.validate(&game);
+        assert!(!result.is_valid);
+        assert!(result.errors.iter().any(|e| e.code == "DYNAMIC_QUESTS_WITHOUT_AI"));
+        
+        // Dynamic quests with AI should be ok
+        let game = GameDNA::builder()
+            .name("Test Game".to_string())
+            .genre(Genre::RPG)
+            .dynamic_quests(true)
+            .ai_enabled(true)
+            .target_platforms(vec![TargetPlatform::PC])
+            .build()
+            .unwrap();
+        
+        let result = engine.validate(&game);
+        assert!(!result.errors.iter().any(|e| e.code == "DYNAMIC_QUESTS_WITHOUT_AI"));
+    }
+    
+    #[test]
+    fn test_field_validation() {
+        let engine = ValidationEngine::new();
+        let game = GameDNA::minimal("Test".to_string(), Genre::FPS, vec![TargetPlatform::PC]);
+        
+        // Validate name field
+        let result = engine.validate_field(&game, "name");
+        assert!(result.is_valid);
+        
+        // Validate with empty name
+        let mut game_with_empty_name = game.clone();
+        game_with_empty_name.name = String::new();
+        let result = engine.validate_field(&game_with_empty_name, "name");
+        assert!(!result.is_valid);
+        assert!(result.errors.iter().any(|e| e.code == "EMPTY_NAME"));
+    }
+    
+    #[test]
+    fn test_validated_builder() {
+        let game = GameDNA::minimal("Test".to_string(), Genre::FPS, vec![TargetPlatform::PC]);
+        let mut builder = ValidatedGameDNABuilder::new(game);
+        
+        // Should be valid initially
+        assert!(builder.is_valid());
+        
+        // Validate all should work
+        let result = builder.validate_all();
+        assert!(result.is_valid);
+        
+        // Validate specific field
+        let field_result = builder.validate_field("name");
+        assert!(field_result.is_valid);
+        
+        // Build should succeed
+        let built_game = builder.build();
+        assert!(built_game.is_ok());
+    }
+    
+    #[test]
+    fn test_locked_game_dna() {
+        let game = GameDNA::minimal("Test".to_string(), Genre::FPS, vec![TargetPlatform::PC]);
+        let locked_game = LockedGameDNA::new(game);
+        
+        // Should be locked
+        assert!(locked_game.is_locked);
+        
+        // Should have a checksum
+        assert!(!locked_game.checksum.is_empty());
+        
+        // Integrity should verify
+        assert!(locked_game.verify_integrity());
+        
+        // Should not be able to access config while locked
+        assert!(locked_game.get_config().is_none());
+        
+        // Unlock and check access
+        let mut unlocked = locked_game;
+        unlocked.unlock();
+        assert!(unlocked.get_config().is_some());
+    }
+    
+    #[test]
+    fn test_locked_game_dna_builder() {
+        let game = GameDNA::minimal("Test".to_string(), Genre::FPS, vec![TargetPlatform::PC]);
+        let builder = LockedGameDNABuilder::new(game);
+        
+        // Validate should work
+        let result = builder.validate();
+        assert!(result.is_valid);
+        
+        // Publish should succeed
+        let publish_result = builder.publish();
+        assert!(publish_result.is_ok());
+        
+        let locked_game = publish_result.unwrap();
+        assert!(locked_game.is_locked);
+        assert!(locked_game.verify_integrity());
+    }
+    
+    #[test]
+    fn test_conflict_detector() {
+        let detector = ConflictDetector::new();
+        
+        // Test with a valid game
+        let game = GameDNA::minimal("Test".to_string(), Genre::FPS, vec![TargetPlatform::PC]);
+        let result = detector.detect_conflicts(&game);
+        
+        // Should have no errors (though might have warnings)
+        assert!(result.errors.is_empty());
+        
+        // Test with FPS + 2D camera conflict
+        let game = GameDNA::builder()
+            .name("FPS Game".to_string())
+            .genre(Genre::FPS)
+            .camera(CameraMode::Perspective2D)
+            .target_platforms(vec![TargetPlatform::PC])
+            .build()
+            .unwrap();
+        
+        let result = detector.detect_conflicts(&game);
+        assert!(!result.errors.is_empty());
+        assert!(result.errors.iter().any(|e| e.code == "GENRE_CAMERA_CONFLICT"));
+    }
+    
+    #[test]
+    fn test_checksum_generation() {
+        let game = GameDNA::minimal("Test".to_string(), Genre::FPS, vec![TargetPlatform::PC]);
+        
+        // Generate checksum
+        let checksum = crate::validation::checksum::generate_checksum(&game);
+        
+        // Should not be empty
+        assert!(!checksum.is_empty());
+        
+        // Should be deterministic
+        let checksum2 = crate::validation::checksum::generate_checksum(&game);
+        assert_eq!(checksum, checksum2);
+        
+        // Should be different for different games
+        let game2 = GameDNA::minimal("Test2".to_string(), Genre::RPG, vec![TargetPlatform::Console]);
+        let checksum3 = crate::validation::checksum::generate_checksum(&game2);
+        assert_ne!(checksum, checksum3);
+        
+        // Verify should work
+        assert!(crate::validation::checksum::verify_checksum(&game, &checksum));
+        assert!(!crate::validation::checksum::verify_checksum(&game, "wrong_checksum"));
+    }
+    
+    #[test]
+    fn test_comprehensive_validation() {
+        // Create a comprehensive game configuration
+        let game = GameDNA::builder()
+            .name("Comprehensive Game".to_string())
+            .genre(Genre::RPG)
+            .camera(CameraMode::Perspective3D)
+            .tone(Tone::Cinematic)
+            .world_scale(WorldScale::OpenWorld)
+            .target_platforms(vec![TargetPlatform::PC, TargetPlatform::Console])
+            .physics_profile(PhysicsProfile::SemiRealistic)
+            .max_players(4)
+            .is_competitive(false)
+            .supports_coop(true)
+            .difficulty(DifficultyMode::Dynamic)
+            .monetization(MonetizationModel::PremiumBuy)
+            .target_fps(60)
+            .max_draw_distance(2000.0)
+            .max_entities(5000)
+            .max_npc_count(500)
+            .time_scale(1.0)
+            .weather_enabled(true)
+            .seasons_enabled(true)
+            .day_night_cycle(true)
+            .persistent_world(false)
+            .npc_count(200)
+            .ai_enabled(true)
+            .ai_difficulty_scaling(true)
+            .has_campaign(true)
+            .has_side_quests(true)
+            .dynamic_quests(true)
+            .tag("rpg".to_string())
+            .tag("open-world".to_string())
+            .tag("coop".to_string())
+            .build()
+            .unwrap();
+        
+        let engine = ValidationEngine::new();
+        let result = engine.validate(&game);
+        
+        // Should be valid (no errors)
+        assert!(result.is_valid);
+        assert!(result.errors.is_empty());
+        
+        // Might have some warnings but that's ok
+        // The important thing is no errors
+    }
+    
+    #[test]
+    fn test_all_genre_camera_combinations() {
+        use crate::schema::Genre;
+        use crate::schema::CameraMode;
+        
+        let engine = ValidationEngine::new();
+        let genres = vec![
+            Genre::FPS,
+            Genre::RPG,
+            Genre::TPS,
+            Genre::Strategy,
+            Genre::Casual,
+            Genre::Horror,
+            Genre::Racing,
+            Genre::Simulation,
+            Genre::Puzzle,
+            Genre::Educational,
+        ];
+        
+        let cameras = vec![
+            CameraMode::Perspective2D,
+            CameraMode::Perspective2_5D,
+            CameraMode::Perspective3D,
+            CameraMode::Isometric,
+            CameraMode::VR,
+        ];
+        
+        for genre in &genres {
+            for camera in &cameras {
+                let game = GameDNA::builder()
+                    .name("Test Game".to_string())
+                    .genre(genre.clone())
+                    .camera(camera.clone())
+                    .target_platforms(vec![TargetPlatform::PC])
+                    .build()
+                    .unwrap();
+                
+                let result = engine.validate(&game);
+                
+                // Just ensure validation doesn't panic
+                // We're not checking specific results here, just that all combinations work
+                assert!(result.is_valid || !result.errors.is_empty());
+            }
+        }
+    }
+    
+    #[test]
+    fn test_validation_performance() {
+        // This is a rough performance test
+        // We want to ensure validation completes quickly
+        let engine = ValidationEngine::new();
+        let game = GameDNA::builder()
+            .name("Performance Test".to_string())
+            .genre(Genre::FPS)
+            .camera(CameraMode::Perspective3D)
+            .target_platforms(vec![TargetPlatform::PC])
+            .build()
+            .unwrap();
+        
+        let start_time = std::time::Instant::now();
+        
+        // Run validation multiple times
+        for _ in 0..100 {
+            let _result = engine.validate(&game);
+        }
+        
+        let duration = start_time.elapsed();
+        
+        // Should complete 100 validations in under 100ms (1ms per validation average)
+        // This is a generous target
+        assert!(duration.as_millis() < 100, "Validation took too long: {}ms for 100 validations", duration.as_millis());
+    }
+}

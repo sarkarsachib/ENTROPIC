@@ -205,6 +205,9 @@ cargo run --example serialize_game
 
 # Show version handling and compatibility
 cargo run --example version_handling
+
+# Show complete validation workflow
+cargo run --example validation_workflow
 ```
 
 ## 🧪 Testing
@@ -332,6 +335,78 @@ cargo run --example create_simple_game
 4. Maintain 85%+ code coverage
 5. No unsafe code without explicit justification
 
+## 🔍 Comprehensive Validation Engine
+
+The validation module provides a robust layer that ensures all game configurations are internally consistent, compatible, and deterministic before being locked and distributed downstream.
+
+### Key Validation Features:
+
+- **Genre ↔ Camera Compatibility**: Ensures FPS games use 3D cameras, strategy games use appropriate views, etc.
+- **Genre ↔ Physics Profile**: Validates that arcade games use arcade physics, realistic games use realistic physics
+- **Tone ↔ Gameplay Combinations**: Prevents contradictory combinations like cinematic tone with hyper-casual mechanics
+- **Scale ↔ Platform Compatibility**: Ensures galaxy-scale games don't target mobile platforms
+- **Monetization ↔ Gameplay**: Validates that free-to-play games have appropriate monetization strategies
+- **Performance Constraints**: Checks that FPS targets are achievable on target platforms
+- **World Simulation**: Validates weather, seasons, and time scale configurations
+- **AI & NPC Constraints**: Ensures AI-enabled games have appropriate NPC counts
+- **Campaign & Quest Logic**: Validates narrative consistency and quest system requirements
+
+### Usage Example:
+
+```rust
+use entropic_dna_core::validation::{ValidationEngine, LockedGameDNABuilder};
+
+// Create a validation engine
+let engine = ValidationEngine::new();
+
+// Validate a game configuration
+let validation_result = engine.validate(&game);
+
+if validation_result.is_valid {
+    println!("✓ Configuration is valid!");
+} else {
+    println!("✗ Validation errors found:");
+    for error in &validation_result.errors {
+        println!("  - {}: {}", error.code, error.message);
+        println!("    Fix: {}", error.details);
+    }
+}
+
+// Publish as a locked, immutable configuration
+let locked_builder = LockedGameDNABuilder::new(game);
+let locked_game = locked_builder.publish()?;
+
+println!("Checksum: {}", locked_game.checksum);
+```
+
+### Conflict Detection:
+
+```rust
+use entropic_dna_core::validation::ConflictDetector;
+
+let detector = ConflictDetector::new();
+let conflicts = detector.detect_conflicts(&game);
+
+if !conflicts.errors.is_empty() {
+    println!("Conflicts detected:");
+    for error in &conflicts.errors {
+        println!("  - {}: {}", error.code, error.message);
+    }
+}
+```
+
+### Deterministic Checksums:
+
+```rust
+use entropic_dna_core::validation::checksum;
+
+// Generate a SHA-256 checksum for configuration integrity
+let checksum = checksum::generate_checksum(&game);
+
+// Verify integrity
+let is_valid = checksum::verify_checksum(&game, &checksum);
+```
+
 ## 📚 Architecture
 
 ```
@@ -345,12 +420,19 @@ entropic-dna-core/
 │   │   └── mod.rs
 │   ├── version/           # Schema versioning and migrations
 │   │   └── mod.rs
+│   ├── validation/        # Comprehensive validation engine
+│   │   ├── mod.rs         # Main validation API
+│   │   ├── rules.rs       # Validation rule definitions
+│   │   ├── constraints.rs # Constraint checking
+│   │   ├── conflict_detector.rs # Conflict detection
+│   │   └── checksum.rs    # Deterministic hashing
 │   └── errors/            # Error types
 │       └── mod.rs
 ├── examples/              # Example programs
 │   ├── create_simple_game.rs
 │   ├── serialize_game.rs
-│   └── version_handle.rs
+│   ├── version_handle.rs
+│   └── validation_workflow.rs
 └── tests/                 # Integration tests
 ```
 

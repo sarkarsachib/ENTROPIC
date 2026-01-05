@@ -71,6 +71,7 @@ pub use crate::schema::{GameDNA, GameDNABuilder, SemanticVersion};
 pub mod errors;
 pub mod schema;
 pub mod serialization;
+pub mod validation;
 pub mod version;
 
 #[cfg(test)]
