@@ -1,0 +1,18 @@
+server:
+  grpc_port: 50051
+  http_port: 8080
+  host: "0.0.0.0"
+
+database:
+  url: "postgres://entropic:entropic@localhost:5432/game_dna?sslmode=disable"
+  max_connections: 25
+  ssl_mode: "disable"
+  use_fallback: true
+
+rust:
+  lib_path: "./lib/libentropic_dna_core.so"
+  enabled: false
+
+logging:
+  level: "info"
+  format: "console"

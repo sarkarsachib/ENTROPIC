@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package entropic.dna.v1;
+
+option go_package = "github.com/entropic-engine/entropic-dna-api/gen/proto/entropic/dna/v1;dnav1";
+
+import "entropic/dna/v1/messages.proto";
+
+// Reserved for future validation-specific extensions.

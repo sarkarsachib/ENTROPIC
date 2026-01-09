@@ -1,0 +1,107 @@
+syntax = "proto3";
+
+package entropic.dna.v1;
+
+option go_package = "github.com/entropic-engine/entropic-dna-api/gen/proto/entropic/dna/v1;dnav1";
+
+// Core GameDNA configuration message
+message GameDNA {
+  // Unique identifier (UUID)
+  string id = 1;
+  
+  // Basic metadata
+  string name = 2;
+  string version = 3;
+  string created_at = 4;
+  string last_modified = 5;
+  string created_by = 6;
+  string checksum = 7;
+  bool is_locked = 8;
+  
+  // Core configuration
+  string genre = 9;
+  string camera = 10;
+  string tone = 11;
+  string world_scale = 12;
+  repeated string target_platforms = 13;
+  
+  // Gameplay configuration
+  string physics_profile = 14;
+  uint32 max_players = 15;
+  bool is_competitive = 16;
+  bool supports_coop = 17;
+  string difficulty = 18;
+  
+  // Monetization and business
+  string monetization = 19;
+  string target_audience = 20;
+  string esrb_rating = 21;
+  
+  // Performance constraints
+  uint32 target_fps = 22;
+  float max_draw_distance = 23;
+  uint32 max_entities = 24;
+  uint32 max_npc_count = 25;
+  
+  // World simulation
+  float time_scale = 26;
+  bool weather_enabled = 27;
+  bool seasons_enabled = 28;
+  bool day_night_cycle = 29;
+  bool persistent_world = 30;
+  
+  // AI and NPC configuration
+  uint32 npc_count = 31;
+  bool ai_enabled = 32;
+  bool ai_difficulty_scaling = 33;
+  
+  // Narrative features
+  bool has_campaign = 34;
+  bool has_side_quests = 35;
+  bool dynamic_quests = 36;
+  
+  // Metadata and extensibility
+  repeated string tags = 37;
+  map<string, string> custom_properties = 38;
+}
+
+// Validation error details
+message ValidationError {
+  string code = 1;
+  string field = 2;
+  string message = 3;
+  string details = 4;
+}
+
+// Validation warning details
+message ValidationWarning {
+  string code = 1;
+  string field = 2;
+  string message = 3;
+  string suggestion = 4;
+}
+
+// Validation response
+message ValidationResponse {
+  bool is_valid = 1;
+  repeated ValidationError errors = 2;
+  repeated ValidationWarning warnings = 3;
+  repeated string suggestions = 4;
+}
+
+// Version history entry
+message VersionInfo {
+  int64 version_num = 1;
+  string checksum = 2;
+  string created_at = 3;
+  string created_by = 4;
+  GameDNA data = 5;
+}
+
+// Pagination metadata
+message PaginationInfo {
+  int32 page = 1;
+  int32 page_size = 2;
+  int32 total = 3;
+  int32 total_pages = 4;
+}

@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: entropic
+      POSTGRES_PASSWORD: entropic
+      POSTGRES_DB: game_dna
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U entropic"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api-server:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: "postgres://entropic:entropic@postgres:5432/game_dna?sslmode=disable"
+      RUST_ENABLED: "false"
+      LOG_LEVEL: "info"
+      LOG_FORMAT: "console"
+      GRPC_PORT: "50051"
+      HTTP_PORT: "8080"
+      SERVER_HOST: "0.0.0.0"
+    ports:
+      - "50051:50051"  # gRPC
+      - "8080:8080"    # REST
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
