@@ -12,6 +12,25 @@ use entropic_dna_core::{
     validation::{ValidationEngine, ValidatedGameDNABuilder, LockedGameDNABuilder},
 };
 
+/// Example CLI workflow that builds, validates, fixes, and publishes a GameDNA configuration.
+///
+/// This example demonstrates a complete validation lifecycle:
+/// 1. Construct an initial (intentionally invalid) GameDNA using the builder API.
+/// 2. Run validation and print errors, warnings, and suggestions.
+/// 3. Apply fixes by rebuilding a corrected configuration and re-validate.
+/// 4. Wrap the validated configuration in a ValidatedGameDNABuilder and perform per-field validation.
+/// 5. Publish a locked configuration via LockedGameDNABuilder, verify checksum/integrity, and demonstrate lock/unlock access control.
+///
+/// # Examples
+///
+/// ```rust
+/// // Run the example workflow from tests or examples runner.
+/// // In a binary crate you can run `cargo run --example validation_workflow`.
+/// fn run() {
+///     // Call main and propagate errors for the example; this will print the workflow to stdout.
+///     crate::main().unwrap();
+/// }
+/// ```
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== Game DNA Validation Workflow Example ===\n");
 

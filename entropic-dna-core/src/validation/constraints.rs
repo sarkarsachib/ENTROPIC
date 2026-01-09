@@ -6,7 +6,23 @@
 use crate::schema::{GameDNA, Genre, CameraMode, PhysicsProfile, TargetPlatform, WorldScale, MonetizationModel};
 use crate::validation::{ValidationResult, ValidationError, ValidationWarning};
 
-/// Validate all constraints for a GameDNA configuration
+/// Run the full suite of cross-field validation rules for a GameDNA and append any generated warnings to the provided ValidationResult.
+///
+/// This performs all configured checks (genre/camera/physics compatibility, platform-specific limits, performance budget analysis, and logical consistency checks) and records any validation warnings into `result`.
+///
+/// # Parameters
+///
+/// - `game_dna`: The GameDNA configuration to validate.
+/// - `result`: Mutable container where validation warnings will be appended.
+///
+/// # Examples
+///
+/// ```
+/// let mut dna = GameDNA::default();
+/// let mut res = ValidationResult::default();
+/// validate_all_constraints(&dna, &mut res);
+/// // `res` now contains any warnings produced by validation.
+/// ```
 pub fn validate_all_constraints(game_dna: &GameDNA, result: &mut ValidationResult) {
     validate_genre_camera_physics_constraints(game_dna, result);
     validate_platform_specific_constraints(game_dna, result);
@@ -14,7 +30,31 @@ pub fn validate_all_constraints(game_dna: &GameDNA, result: &mut ValidationResul
     validate_logical_consistency_constraints(game_dna, result);
 }
 
-/// Validate genre, camera, and physics constraints together
+/// Validates cross-field compatibility between genre, camera mode, and physics profile.
+///
+/// Checks common combinations and emits warnings for combinations likely to reduce player immersion
+/// or feel inconsistent. Currently emits a `SHOOTER_WITH_ARCADE_PHYSICS` warning when a first- or
+/// third-person shooter (FPS/TPS) uses a non-realistic physics profile with a 3D/VR camera.
+///
+/// # Arguments
+///
+/// * `game_dna` - The GameDNA configuration to validate; examined fields include `genre`,
+///   `camera`, and `physics_profile`.
+/// * `result` - Collector for any produced `ValidationWarning`s.
+///
+/// # Examples
+///
+/// ```
+/// let mut result = ValidationResult::new();
+/// let dna = GameDNA {
+///     genre: Genre::FPS,
+///     camera: CameraMode::Perspective3D,
+///     physics_profile: PhysicsProfile::Arcade,
+///     ..Default::default()
+/// };
+/// validate_genre_camera_physics_constraints(&dna, &mut result);
+/// assert!(result.contains_code("SHOOTER_WITH_ARCADE_PHYSICS"));
+/// ```
 pub fn validate_genre_camera_physics_constraints(game_dna: &GameDNA, result: &mut ValidationResult) {
     // FPS/TPS with 3D camera and realistic physics is a good combination
     if matches!(game_dna.genre, Genre::FPS | Genre::TPS) {
@@ -51,7 +91,35 @@ pub fn validate_genre_camera_physics_constraints(game_dna: &GameDNA, result: &mu
     }
 }
 
-/// Validate platform-specific constraints
+/// Validate platform-specific constraints and add warnings to `result`.
+///
+/// Checks target platforms in `game_dna` and emits `ValidationWarning`s when platform-targeted
+/// values are likely to cause performance or compatibility problems. Warnings produced:
+/// - `MOBILE_HIGH_FPS` when Mobile is targeted and `target_fps` > 120.
+/// - `MOBILE_HIGH_ENTITY_COUNT` when Mobile is targeted and `max_entities` > 5000.
+/// - `MOBILE_HIGH_NPC_COUNT` when Mobile is targeted and `max_npc_count` > 500.
+/// - `CONSOLE_HIGH_FPS` when Console is targeted and `target_fps` > 120.
+/// - `XR_HIGH_FPS` when XR is targeted and `target_fps` > 90.
+/// - `XR_HIGH_ENTITY_COUNT` when XR is targeted and `max_entities` > 10000.
+///
+/// The function does not return a value; all findings are appended to `result`.
+///
+/// # Examples
+///
+/// ```
+/// let game_dna = GameDNA {
+///     target_platforms: vec![TargetPlatform::Mobile],
+///     target_fps: 144,
+///     max_entities: 6000,
+///     max_npc_count: 600,
+///     ..Default::default()
+/// };
+/// let mut result = ValidationResult::new();
+/// validate_platform_specific_constraints(&game_dna, &mut result);
+/// assert!(result.warnings.iter().any(|w| w.code == "MOBILE_HIGH_FPS"));
+/// assert!(result.warnings.iter().any(|w| w.code == "MOBILE_HIGH_ENTITY_COUNT"));
+/// assert!(result.warnings.iter().any(|w| w.code == "MOBILE_HIGH_NPC_COUNT"));
+/// ```
 pub fn validate_platform_specific_constraints(game_dna: &GameDNA, result: &mut ValidationResult) {
     // Mobile platform constraints
     if game_dna.target_platforms.contains(&TargetPlatform::Mobile) {
@@ -123,7 +191,30 @@ pub fn validate_platform_specific_constraints(game_dna: &GameDNA, result: &mut V
     }
 }
 
-/// Validate performance budget constraints
+/// Validate that the GameDNA configuration fits a rough performance budget and emit a warning if it does not.
+///
+/// This computes a simple budget based on target platforms and world scale, estimates a total cost
+/// from entities, NPCs, players, FPS target, and physics complexity, and adds a `PERFORMANCE_BUDGET_EXCEEDED`
+/// warning to `result` when the estimated cost exceeds the computed budget. The warning message includes
+/// the over-budget percentage and suggests reducing entity/NPC counts, lowering FPS, or simplifying physics.
+///
+/// # Examples
+///
+/// ```
+/// let game_dna = GameDNA {
+///     target_platforms: vec![TargetPlatform::PC],
+///     world_scale: WorldScale::SmallLevel,
+///     target_fps: 60,
+///     max_entities: 1000,
+///     max_npc_count: 50,
+///     max_players: 1,
+///     physics_profile: PhysicsProfile::Arcade,
+///     ..Default::default()
+/// };
+/// let mut result = ValidationResult::new();
+/// validate_performance_budget_constraints(&game_dna, &mut result);
+/// // Inspect `result` for potential PERFORMANCE_BUDGET_EXCEEDED warnings.
+/// ```
 pub fn validate_performance_budget_constraints(game_dna: &GameDNA, result: &mut ValidationResult) {
     // Calculate rough performance budget based on platform and scale
     let mut performance_budget = 0;
@@ -176,7 +267,27 @@ pub fn validate_performance_budget_constraints(game_dna: &GameDNA, result: &mut 
     }
 }
 
-/// Validate logical consistency constraints
+/// Validate logical consistency across related GameDNA fields and emit warnings for contradictory or unusual combinations.
+///
+/// This checks for and reports the following conditions:
+/// - Competitive or co-op flags set while `max_players` == 1 (`COMPETITIVE_SINGLE_PLAYER`, `COOP_SINGLE_PLAYER`).
+/// - Large `max_players` (> 4) with neither competitive nor co-op indicated (`HIGH_PLAYER_COUNT_NO_MULTIPLAYER`).
+/// - Persistent world enabled for single-player only (`PERSISTENT_WORLD_SINGLE_PLAYER`).
+/// - Free-to-play monetization with no monetization tags present (`FREE_TO_PLAY_NO_MONETIZATION_STRATEGY`).
+/// - Premium/One-time-pay multiplayer with no anti-cheat tag (`PREMIUM_MULTIPLAYER_NO_ANTI_CHEAT`).
+///
+/// # Examples
+///
+/// ```
+/// let mut game_dna = GameDNA::default();
+/// game_dna.is_competitive = true;
+/// game_dna.max_players = 1;
+///
+/// let mut result = ValidationResult::new();
+/// validate_logical_consistency_constraints(&game_dna, &mut result);
+///
+/// assert!(result.has_warning_code("COMPETITIVE_SINGLE_PLAYER"));
+/// ```
 pub fn validate_logical_consistency_constraints(game_dna: &GameDNA, result: &mut ValidationResult) {
     // Check for contradictory settings
     
