@@ -5,6 +5,11 @@ const DB_VERSION = 1;
 
 type StoreName = 'configs' | 'versions';
 
+/**
+ * Initializes and opens the application's IndexedDB database and ensures required object stores exist.
+ *
+ * @returns The opened IndexedDB `IDBDatabase` instance.
+ */
 function openDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
@@ -24,6 +29,12 @@ function openDB(): Promise<IDBDatabase> {
   });
 }
 
+/**
+ * Execute an IndexedDB request on the specified object store within a transaction and return its result.
+ *
+ * @param fn - A callback that is given the target `IDBObjectStore` and must return an `IDBRequest<T>` to execute.
+ * @returns The value produced by the provided `IDBRequest`, typed as `T`.
+ */
 async function tx<T>(storeName: StoreName, mode: IDBTransactionMode, fn: (store: IDBObjectStore) => IDBRequest<T>): Promise<T> {
   const db = await openDB();
   return new Promise((resolve, reject) => {

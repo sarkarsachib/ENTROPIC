@@ -8,6 +8,13 @@ const CAMERAS: { value: CameraMode; label: string }[] = [
   { value: 'VR', label: 'Virtual Reality' },
 ];
 
+/**
+ * Render a labeled dropdown for selecting a camera mode.
+ *
+ * @param value - Currently selected camera mode; if not a string, the control shows "Custom"
+ * @param onChange - Callback invoked with the newly selected `CameraMode` when the selection changes
+ * @returns The JSX element for the camera mode selector
+ */
 export function CameraSelector({
   value,
   onChange,

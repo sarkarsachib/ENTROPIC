@@ -4,7 +4,12 @@ import { logger } from '../utils/logger.js';
 import { formatValidationResult } from '../utils/formatter.js';
 import type { ValidationResult } from '@entropic/types';
 
-// Mock validator for now - will be replaced with actual WASM validator
+/**
+ * Perform a lightweight local validation of a parsed configuration object.
+ *
+ * @param config - The parsed configuration to validate (may be any value)
+ * @returns A ValidationResult where `is_valid` is `true` if the configuration has no validation errors, `false` otherwise; `errors` lists validation errors, `warnings` lists warnings, and `suggestions` lists suggested fixes.
+ */
 function validateLocal(config: unknown): ValidationResult {
   // Basic validation - checking required fields
   const errors: ValidationResult['errors'] = [];

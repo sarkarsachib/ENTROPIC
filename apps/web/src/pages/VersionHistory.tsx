@@ -1,5 +1,12 @@
 import { useParams } from 'react-router-dom';
 
+/**
+ * Renders the Version History page for the config identified by the route parameter `id`.
+ *
+ * Displays a heading and a placeholder block showing the interpolated `id` and a note that the feature is not yet implemented.
+ *
+ * @returns The JSX element for the Version History page.
+ */
 export default function VersionHistory() {
   const { id } = useParams<{ id: string }>();
 

@@ -1,5 +1,11 @@
 import type { GameDNA } from '@entropic/types';
 
+/**
+ * Renders a live, pretty-printed JSON preview of the given game configuration.
+ *
+ * @param config - The GameDNA object to display; shown as formatted JSON.
+ * @returns A React element containing a labeled, scrollable, formatted JSON preview of `config`.
+ */
 export function PreviewPanel({ config }: { config: GameDNA }) {
   return (
     <div className="space-y-2">

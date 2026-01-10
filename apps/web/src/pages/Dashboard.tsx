@@ -3,6 +3,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import type { GameDNA } from '@entropic/types';
 import { storage } from '../services/storage';
 
+/**
+ * Dashboard page that loads and displays saved game configurations and provides navigation to the editor.
+ *
+ * @returns A React element rendering the dashboard UI, including a loading state, a list of configuration cards linking to the editor, a "Create New Config" button, and summary statistic cards.
+ */
 export default function Dashboard() {
   const navigate = useNavigate();
   const [configs, setConfigs] = useState<GameDNA[]>([]);

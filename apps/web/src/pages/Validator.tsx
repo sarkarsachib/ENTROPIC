@@ -2,6 +2,11 @@ import { useState } from 'react';
 import type { ValidationResult } from '@entropic/types';
 import { validateConfigLocal } from '../services/validator';
 
+/**
+ * Render a Validator UI for pasting Game DNA JSON, performing local validation, and displaying validation results or parsing/validation errors.
+ *
+ * @returns A JSX element containing a textarea for JSON input and a results pane that shows an error message or the validation outcome and formatted ValidationResult.
+ */
 export default function Validator() {
   const [json, setJson] = useState('');
   const [result, setResult] = useState<ValidationResult | null>(null);

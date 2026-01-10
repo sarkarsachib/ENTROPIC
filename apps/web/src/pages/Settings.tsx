@@ -1,3 +1,8 @@
+/**
+ * Renders the Settings page UI with a header and a placeholder panel for user and organization settings.
+ *
+ * @returns The JSX element for the Settings page containing a heading and a settings stub panel.
+ */
 export default function Settings() {
   return (
     <div className="space-y-6">
