@@ -1,0 +1,8 @@
+FROM node:20-alpine
+WORKDIR /app
+COPY . .
+RUN corepack enable && corepack prepare pnpm@8.15.0 --activate
+RUN pnpm install
+RUN pnpm build:cli
+
+ENTRYPOINT ["node", "apps/cli/dist/index.js"]

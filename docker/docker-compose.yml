@@ -1,0 +1,17 @@
+version: '3.8'
+services:
+  portal:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.web
+    ports:
+      - "3000:80"
+    environment:
+      VITE_API_URL: http://localhost:8080
+
+  cli:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.cli
+    volumes:
+      - ../configs:/app/configs
