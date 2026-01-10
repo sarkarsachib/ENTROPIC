@@ -1,0 +1,33 @@
+{
+  "name": "@entropic/cli",
+  "version": "1.0.0",
+  "description": "Game DNA CLI tool",
+  "type": "module",
+  "bin": {
+    "entropic": "./dist/index.js"
+  },
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsup src/index.ts --format esm --dts --clean",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint src/",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@entropic/types": "workspace:*",
+    "commander": "^12.0.0",
+    "chalk": "^5.3.0",
+    "ora": "^8.0.1",
+    "prompts": "^2.4.2",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/prompts": "^2.4.9",
+    "tsup": "^8.0.1",
+    "tsx": "^4.7.0",
+    "typescript": "workspace:*",
+    "vitest": "^1.2.0"
+  }
+}

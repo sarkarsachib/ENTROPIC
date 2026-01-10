@@ -1,0 +1,34 @@
+{
+  "name": "entropic-dev-portal",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Developer portal for Game DNA management - web UI, CLI, and WASM validation",
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "build:web": "turbo run build --filter=@entropic/web",
+    "build:cli": "turbo run build --filter=@entropic/cli",
+    "build:wasm": "cd packages/wasm && ./build.sh",
+    "test": "turbo run test",
+    "test:watch": "turbo run test:watch",
+    "lint": "turbo run lint",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "typecheck": "turbo run typecheck",
+    "clean": "turbo run clean && rm -rf node_modules"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@8.15.0",
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "prettier": "^3.2.4",
+    "turbo": "^1.12.0",
+    "typescript": "^5.3.3"
+  }
+}
