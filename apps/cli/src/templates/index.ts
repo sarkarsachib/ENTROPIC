@@ -152,6 +152,13 @@ export const TEMPLATES: Record<string, GameTemplate> = {
   },
 };
 
+/**
+ * Create a GameDNA object from a named template in the TEMPLATES registry.
+ *
+ * @param templateName - Key of the template to load from `TEMPLATES`
+ * @returns A GameDNA object containing a generated `id`, default `name` ("New Game"), initial `version` (0.1.0), and the selected template's configuration
+ * @throws Error if no template exists for `templateName`; the error message lists available template keys
+ */
 export function loadTemplate(templateName: string): GameDNA {
   const template = TEMPLATES[templateName];
   if (!template) {
