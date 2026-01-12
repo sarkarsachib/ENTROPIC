@@ -19,6 +19,18 @@ pub enum TriggerCondition {
 }
 
 impl EventTrigger {
+    /// Creates a new `EventTrigger` with the provided `id`, `condition`, and `event_template`, and marks it active.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let trigger = EventTrigger::new(
+    ///     "trigger_1".to_string(),
+    ///     TriggerCondition::TimeElapsed(60),
+    ///     "spawn_event".to_string(),
+    /// );
+    /// assert!(trigger.is_active());
+    /// ```
     pub fn new(id: String, condition: TriggerCondition, event_template: String) -> Self {
         Self {
             id,
@@ -28,14 +40,57 @@ impl EventTrigger {
         }
     }
 
+    /// Marks the trigger as active.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let mut trigger = EventTrigger::new(
+    ///     "t1".to_string(),
+    ///     TriggerCondition::TimeElapsed(10),
+    ///     "event_template".to_string(),
+    /// );
+    /// trigger.deactivate();
+    /// trigger.activate();
+    /// assert!(trigger.is_active());
+    /// ```
     pub fn activate(&mut self) {
         self.active = true;
     }
 
+    /// Deactivates the trigger so it no longer fires.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let mut t = EventTrigger::new(
+    ///     "trigger1".to_string(),
+    ///     TriggerCondition::Custom("example".to_string()),
+    ///     "template".to_string(),
+    /// );
+    /// t.deactivate();
+    /// assert!(!t.is_active());
+    /// ```
     pub fn deactivate(&mut self) {
         self.active = false;
     }
 
+    /// Indicates whether the trigger is currently active.
+    ///
+    /// # Returns
+    ///
+    /// `true` if the trigger is active, `false` otherwise.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let trigger = EventTrigger::new(
+    ///     "t1".to_string(),
+    ///     TriggerCondition::TimeElapsed(10),
+    ///     "event_template".to_string(),
+    /// );
+    /// assert!(trigger.is_active());
+    /// ```
     pub fn is_active(&self) -> bool {
         self.active
     }

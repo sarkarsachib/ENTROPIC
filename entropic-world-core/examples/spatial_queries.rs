@@ -3,6 +3,16 @@ use entropic_world_core::population::{Entity, EntityType};
 use entropic_world_core::spatial::coordinates::ChunkCoord;
 use std::time::Instant;
 
+/// Runs a spatial-query performance benchmark.
+///
+/// Creates a World configured with 64×64 chunks, initializes chunks, populates 1000 NPC entities distributed across the world, and performs several spatial queries (radius, rectangle, and repeated radius queries) while printing timing and result counts. Also demonstrates entity lookup and neighbor discovery and prints a summary of entities and chunks.
+///
+/// # Examples
+///
+/// ```no_run
+/// // Execute the example benchmark (prints timing and counts to stdout)
+/// main();
+/// ```
 fn main() {
     println!("=== Spatial Query Performance Test ===\n");
 

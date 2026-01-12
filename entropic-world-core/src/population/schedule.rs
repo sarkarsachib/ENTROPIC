@@ -33,12 +33,47 @@ pub enum DayType {
 }
 
 impl Schedule {
+    /// Creates an empty Schedule with no routines.
+    ///
+    /// The returned Schedule has an empty `routines` map ready for entries to be added.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let sched = entropic_world_core::population::schedule::Schedule::new();
+    /// assert!(sched.routines.is_empty());
+    /// ```
     pub fn new() -> Self {
         Self {
             routines: HashMap::new(),
         }
     }
 
+    /// Adds a schedule entry for a specific day type.
+    ///
+    /// If no entries exist for `day_type` yet, a new entry list is created and
+    /// `entry` is appended to that list.
+    ///
+    /// # Parameters
+    ///
+    /// - `day_type`: The day category to which the entry should be added (e.g., Weekday, Weekend).
+    /// - `entry`: The schedule entry to append.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let mut sched = Schedule::new();
+    /// sched.add_entry(
+    ///     DayType::Weekday,
+    ///     ScheduleEntry {
+    ///         start_hour: 9,
+    ///         end_hour: 17,
+    ///         activity: Activity::Work,
+    ///         location: None,
+    ///     },
+    /// );
+    /// assert_eq!(sched.get_activity_at(DayType::Weekday, 12), Some(&Activity::Work));
+    /// ```
     pub fn add_entry(&mut self, day_type: DayType, entry: ScheduleEntry) {
         self.routines
             .entry(day_type)
@@ -46,6 +81,17 @@ impl Schedule {
             .push(entry);
     }
 
+    /// Finds the activity scheduled for a given day type at a specific hour.
+    ///
+    /// Returns `Some(&Activity)` if a `ScheduleEntry` for `day_type` contains an interval
+    /// where `start_hour <= hour < end_hour`, `None` otherwise.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let sched = Schedule::default();
+    /// assert_eq!(sched.get_activity_at(DayType::Weekday, 12), Some(&Activity::Work));
+    /// ```
     pub fn get_activity_at(&self, day_type: DayType, hour: u8) -> Option<&Activity> {
         self.routines.get(&day_type).and_then(|entries| {
             entries
@@ -57,6 +103,19 @@ impl Schedule {
 }
 
 impl Default for Schedule {
+    /// Constructs a Schedule populated with a typical weekday routine: sleep, eat, work, socialize, and sleep.
+    ///
+    /// # Returns
+    ///
+    /// The constructed `Schedule` containing predefined `Weekday` entries covering 0–24 hours.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let sched = Schedule::default();
+    /// assert_eq!(sched.get_activity_at(DayType::Weekday, 3), Some(&Activity::Sleep));
+    /// assert_eq!(sched.get_activity_at(DayType::Weekday, 12), Some(&Activity::Work));
+    /// ```
     fn default() -> Self {
         let mut schedule = Self::new();
 

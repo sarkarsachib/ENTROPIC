@@ -14,6 +14,26 @@ pub struct TradeRoute {
 }
 
 impl TradeRoute {
+    /// Creates a new `TradeRoute` with the provided identifiers, endpoints, resource, frequency, and caravan size. The route is active by default.
+    ///
+    /// `frequency` is the number of caravans dispatched per time unit; `caravan_size` is the number of units transported per caravan.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// let route = TradeRoute::new(
+    ///     "route-1".into(),
+    ///     settlement_a,
+    ///     settlement_b,
+    ///     ResourceType::Food,
+    ///     4,
+    ///     20,
+    /// );
+    /// assert!(route.is_active());
+    /// assert_eq!(route.frequency, 4);
+    /// ```
+    ///
+    /// Returns the created `TradeRoute`.
     pub fn new(
         id: String,
         from: SettlementId,
@@ -33,14 +53,62 @@ impl TradeRoute {
         }
     }
 
+    /// Sets the route's active flag to `true`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let mut route = TradeRoute::new("r1".into(), from, to, resource, 4, 10);
+    /// route.deactivate();
+    /// route.activate();
+    /// assert!(route.is_active());
+    /// ```
     pub fn activate(&mut self) {
         self.active = true;
     }
 
+    /// Deactivates the trade route.
+    ///
+    /// After calling this method, `is_active()` returns `false`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let mut route = TradeRoute {
+    ///     id: "route-1".into(),
+    ///     from: SettlementId::default(),
+    ///     to: SettlementId::default(),
+    ///     resource: ResourceType::default(),
+    ///     frequency: 1,
+    ///     caravan_size: 1,
+    ///     active: true,
+    /// };
+    /// route.deactivate();
+    /// assert!(!route.is_active());
+    /// ```
     pub fn deactivate(&mut self) {
         self.active = false;
     }
 
+    /// Checks whether the trade route is active.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let route = TradeRoute::new(
+    ///     "r1".to_string(),
+    ///     SettlementId::new("s1".to_string()),
+    ///     SettlementId::new("s2".to_string()),
+    ///     ResourceType::Food,
+    ///     4,
+    ///     10,
+    /// );
+    /// assert!(route.is_active());
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// `true` if the trade route is active, `false` otherwise.
     pub fn is_active(&self) -> bool {
         self.active
     }
@@ -58,6 +126,23 @@ pub struct TradeTransaction {
 }
 
 impl TradeTransaction {
+    /// Constructs a TradeTransaction with the given parties, resource, quantity, and unit price.
+    ///
+    /// The transaction's `total_price` is computed as `quantity * price_per_unit`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let tx = TradeTransaction::new(
+    ///     "tx1".to_string(),
+    ///     "seller".to_string(),
+    ///     "buyer".to_string(),
+    ///     ResourceType::Grain,
+    ///     10,
+    ///     50,
+    /// );
+    /// assert_eq!(tx.total_price, 500);
+    /// ```
     pub fn new(
         id: String,
         seller: String,
