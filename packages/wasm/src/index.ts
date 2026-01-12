@@ -13,7 +13,12 @@
 import type { GameDNA, ValidationResult } from '@entropic/types';
 
 /**
- * Validate a GameDNA configuration using WASM validator
+ * Validate a GameDNA configuration and produce structured validation results.
+ *
+ * Currently returns a stub result (always valid with no errors, warnings, or suggestions); intended to be replaced by a WASM-based validator.
+ *
+ * @param config - The GameDNA configuration to validate
+ * @returns A ValidationResult describing whether the config is valid and any errors, warnings, or suggestions found
  */
 export async function validateGameDNA(config: GameDNA): Promise<ValidationResult> {
   // TODO: Replace with actual WASM import once built
@@ -30,7 +35,10 @@ export async function validateGameDNA(config: GameDNA): Promise<ValidationResult
 }
 
 /**
- * Calculate checksum for a GameDNA configuration
+ * Compute a checksum for a GameDNA configuration.
+ *
+ * @param config - The GameDNA configuration to compute the checksum for
+ * @returns The checksum string for `config`
  */
 export async function calculateChecksum(config: GameDNA): Promise<string> {
   // TODO: Replace with actual WASM import once built
@@ -41,7 +49,10 @@ export async function calculateChecksum(config: GameDNA): Promise<string> {
 }
 
 /**
- * Serialize a GameDNA configuration with deterministic output
+ * Serialize a GameDNA configuration into a deterministic JSON string.
+ *
+ * @param config - The GameDNA configuration to serialize
+ * @returns The deterministic JSON string representation of `config`
  */
 export async function serializeGameDNA(config: GameDNA): Promise<string> {
   // TODO: Replace with actual WASM import once built

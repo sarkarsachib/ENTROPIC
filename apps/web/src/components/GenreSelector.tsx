@@ -13,6 +13,13 @@ const GENRES: { value: Genre; label: string; description: string }[] = [
   { value: 'Educational', label: 'Educational', description: 'Learning-focused' },
 ];
 
+/**
+ * Render a labeled dropdown for choosing a game genre and display the selected genre's description.
+ *
+ * @param value - The currently selected genre.
+ * @param onChange - Callback invoked with the new genre when the selection changes.
+ * @returns A JSX element containing the genre select control and its description.
+ */
 export function GenreSelector({
   value,
   onChange,

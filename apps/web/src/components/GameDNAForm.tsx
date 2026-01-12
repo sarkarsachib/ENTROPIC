@@ -9,6 +9,16 @@ const MONETIZATION: MonetizationModel[] = ['FreeToPlay', 'PremiumBuy', 'Subscrip
 const TONES: Tone[] = ['Realistic', 'Arcade', 'Cinematic', 'Stylized', 'Minimalist'];
 const SCALES: WorldScale[] = ['TinyLevel', 'SmallLevel', 'MediumLevel', 'LargeLevel', 'OpenWorld', 'Planet', 'Galaxy'];
 
+/**
+ * Render a form for editing a GameDNA configuration.
+ *
+ * The form is fully controlled by `config`; user interactions invoke `onChange`
+ * with a `Partial<GameDNA>` describing the changed field(s).
+ *
+ * @param config - Current GameDNA values used to populate the form controls
+ * @param onChange - Callback invoked with partial updates for any changed field
+ * @returns The rendered form JSX element
+ */
 export function GameDNAForm({
   config,
   onChange,

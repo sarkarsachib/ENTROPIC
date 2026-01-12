@@ -7,6 +7,11 @@ import { GameDNAForm } from '../components/GameDNAForm';
 import { ValidationResults } from '../components/ValidationResults';
 import { PreviewPanel } from '../components/PreviewPanel';
 
+/**
+ * Create a new GameDNA object populated with sensible default values for a new game configuration.
+ *
+ * @returns A `GameDNA` initialized with a unique `id`, default metadata (name, version, genre, platform, etc.), common gameplay and environment defaults, and empty `tags` and `custom_properties`.
+ */
 function createEmptyConfig(): GameDNA {
   return {
     id: crypto.randomUUID(),
@@ -45,6 +50,21 @@ function createEmptyConfig(): GameDNA {
   };
 }
 
+/**
+ * Page component that displays and edits a GameDNA configuration.
+ *
+ * Loads a configuration using the route `id` parameter (or creates a new one),
+ * validates the configuration when it changes, and renders a two-pane editor
+ * with a configuration form, validation results, and a live preview.
+ *
+ * The UI exposes actions to save the configuration to local storage, publish
+ * (not implemented; disabled until validation passes), and cancel editing.
+ *
+ * Shows a loading indicator while the config is being loaded and an error
+ * message if loading fails.
+ *
+ * @returns The editor's React element containing the configuration form, validation panel, and preview.
+ */
 export default function ConfigEditor() {
   const { id } = useParams<{ id?: string }>();
   const navigate = useNavigate();

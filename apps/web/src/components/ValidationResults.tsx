@@ -1,5 +1,11 @@
 import type { ValidationResult } from '@entropic/types';
 
+/**
+ * Render a compact validation summary showing overall status and any errors, warnings, or suggestions.
+ *
+ * @param result - The validation result to display; if `null`, nothing is rendered
+ * @returns A JSX element containing the validation UI, or `null` when `result` is `null`
+ */
 export function ValidationResults({ result }: { result: ValidationResult | null }) {
   if (!result) return null;
 

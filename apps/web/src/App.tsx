@@ -6,6 +6,11 @@ import Validator from './pages/Validator';
 import VersionHistory from './pages/VersionHistory';
 import Settings from './pages/Settings';
 
+/**
+ * Application root component that provides the global layout and route mappings for the Entropic Dev Portal.
+ *
+ * @returns The top-level JSX element containing the site navigation and route definitions for dashboard, editor, validator, history, and settings.
+ */
 function App() {
   return (
     <div className="min-h-screen bg-slate-900 text-slate-100">
