@@ -4,6 +4,18 @@ use entropic_world_core::economy::{Settlement, Market, ResourceType};
 use entropic_world_core::ecosystem::{Species, Diet};
 use entropic_world_core::spatial::coordinates::ChunkCoord;
 
+/// Creates and simulates an example ENTROPIC world and prints setup progress and final statistics.
+///
+/// The program builds a World from a configuration, initializes chunks, registers entities,
+/// NPCs, factions, settlements, markets, and species, advances the simulation for 100 ticks,
+/// and then prints aggregated world statistics and the current in-world time.
+///
+/// # Examples
+///
+/// ```
+/// // Execute the example program; output is written to stdout.
+/// main();
+/// ```
 fn main() {
     println!("=== Creating ENTROPIC World ===\n");
 

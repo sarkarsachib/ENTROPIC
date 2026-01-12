@@ -7,15 +7,53 @@ pub struct EventQueue {
 }
 
 impl EventQueue {
+    /// Creates an empty EventQueue.
+    ///
+    /// Returns an `EventQueue` with no scheduled events.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let q = EventQueue::new();
+    /// assert!(q.is_empty());
+    /// assert_eq!(q.len(), 0);
+    /// ```
     pub fn new() -> Self {
         Self { events: Vec::new() }
     }
 
+    /// Schedules a `WorldEvent` to be executed at the specified tick.
+    ///
+    /// The event is appended to the queue and the queue is kept sorted in ascending tick order.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let mut q = EventQueue::new();
+    /// let event = /* construct a WorldEvent here */;
+    /// q.schedule(100, event);
+    /// assert_eq!(q.len(), 1);
+    /// ```
     pub fn schedule(&mut self, tick: u64, event: WorldEvent) {
         self.events.push((tick, event));
         self.events.sort_by_key(|e| e.0);
     }
 
+    /// Removes and returns all events scheduled exactly at `tick`.
+    ///
+    /// Scans the queue from the front and removes any events whose tick equals the given value.
+    /// Scanning stops once an event with a greater tick is encountered.
+    ///
+    /// # Returns
+    ///
+    /// A `Vec<WorldEvent>` containing the removed events; empty if no events were scheduled at `tick`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let mut q = EventQueue::new();
+    /// assert!(q.get_events_at_tick(0).is_empty());
+    /// ```
     pub fn get_events_at_tick(&mut self, tick: u64) -> Vec<WorldEvent> {
         let mut result = Vec::new();
         let mut i = 0;
@@ -33,22 +71,87 @@ impl EventQueue {
         result
     }
 
+    /// Returns a reference to the next scheduled event (the entry with the smallest tick) without removing it.
+    ///
+    /// # Returns
+    ///
+    /// `Some((&u64, &WorldEvent))` containing the tick and corresponding `WorldEvent` for the earliest scheduled event, `None` if the queue is empty.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// let q = EventQueue::new();
+    /// // q.peek_next() returns None for an empty queue
+    /// assert!(q.peek_next().is_none());
+    /// // After scheduling, peek_next yields the earliest tick and event reference
+    /// // q.schedule(10, some_event);
+    /// // let (tick, event) = q.peek_next().unwrap();
+    /// // assert_eq!(*tick, 10);
+    /// ```
     pub fn peek_next(&self) -> Option<(&u64, &WorldEvent)> {
         self.events.first().map(|(tick, event)| (tick, event))
     }
 
+    /// Get the number of scheduled events in the queue.
+    ///
+    /// # Returns
+    ///
+    /// `usize` representing the number of scheduled events.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let q = EventQueue::new();
+    /// assert_eq!(q.len(), 0);
+    /// ```
     pub fn len(&self) -> usize {
         self.events.len()
     }
 
+    /// Checks whether the event queue contains no scheduled events.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let q = EventQueue::new();
+    /// assert!(q.is_empty());
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// `true` if there are no scheduled events, `false` otherwise.
     pub fn is_empty(&self) -> bool {
         self.events.is_empty()
     }
 
+    /// Removes all scheduled events from the queue.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let mut q = EventQueue::new();
+    /// assert_eq!(q.len(), 0);
+    /// q.clear();
+    /// assert_eq!(q.len(), 0);
+    /// ```
     pub fn clear(&mut self) {
         self.events.clear();
     }
 
+    /// Removes and returns all scheduled events whose tick is less than or equal to `tick`.
+    ///
+    /// The returned vector contains the removed `WorldEvent` items in the same chronological order
+    /// they were scheduled.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let mut q = EventQueue::new();
+    /// // let evt = /* construct a WorldEvent value */;
+    /// // q.schedule(5, evt);
+    /// let taken = q.get_events_until(10);
+    /// // `taken` now contains all events scheduled at or before tick 10
+    /// ```
     pub fn get_events_until(&mut self, tick: u64) -> Vec<WorldEvent> {
         let mut result = Vec::new();
         
@@ -65,6 +168,14 @@ impl EventQueue {
 }
 
 impl Default for EventQueue {
+    /// Constructs a new EventQueue.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let q = EventQueue::default();
+    /// assert!(q.is_empty());
+    /// ```
     fn default() -> Self {
         Self::new()
     }

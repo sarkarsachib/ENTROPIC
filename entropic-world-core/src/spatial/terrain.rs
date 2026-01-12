@@ -14,6 +14,15 @@ pub enum Biome {
 }
 
 impl Default for Biome {
+    /// Provide the default Biome variant.
+    ///
+    /// The default is `Biome::Plains`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// assert_eq!(Biome::default(), Biome::Plains);
+    /// ```
     fn default() -> Self {
         Biome::Plains
     }
@@ -50,6 +59,24 @@ pub struct Structure {
 }
 
 impl Structure {
+    /// Constructs a new `Structure` with the given id, type, and coordinates.
+    ///
+    /// The created structure has no owner or faction, `built_at` set to `WorldTime::default()`,
+    /// and `condition` initialized to 1.0.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use entropic_world_core::spatial::terrain::{Structure, StructureType};
+    ///
+    /// let s = Structure::new("struct_1".to_string(), StructureType::House, 100.0, 200.0, 0.0);
+    /// assert_eq!(s.structure_type, StructureType::House);
+    /// assert_eq!(s.condition, 1.0);
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// A `Structure` initialized with the provided `id`, `structure_type`, and `(x, y, z)` coordinates.
     pub fn new(
         id: StructureId,
         structure_type: StructureType,

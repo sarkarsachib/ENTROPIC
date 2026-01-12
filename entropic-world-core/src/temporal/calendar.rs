@@ -10,6 +10,21 @@ pub struct Calendar {
 }
 
 impl Default for Calendar {
+    /// Constructs a Calendar configured for a typical Gregorian year with standard month names, day names, season names, and month lengths.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let cal = Calendar::default();
+    /// assert_eq!(cal.year_length_days, 365);
+    /// assert_eq!(cal.month_names.len(), 12);
+    /// assert_eq!(cal.day_names.len(), 7);
+    /// assert_eq!(cal.season_names, vec!["Spring", "Summer", "Fall", "Winter"]
+    ///     .into_iter()
+    ///     .map(|s| s.to_string())
+    ///     .collect::<Vec<_>>());
+    /// assert_eq!(cal.month_lengths, vec![31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]);
+    /// ```
     fn default() -> Self {
         Self {
             year_length_days: 365,
@@ -44,6 +59,23 @@ impl Default for Calendar {
 }
 
 impl Calendar {
+    /// Get the month name for a 1-based month number.
+    ///
+    /// `month` is interpreted as 1 = first month, 2 = second month, etc. If `month` is within the range of
+    /// available month names this returns a string slice referencing that name; otherwise it returns `None`.
+    ///
+    /// # Returns
+    ///
+    /// `Some(&str)` with the month name when `month` is between 1 and the number of months, `None` otherwise.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let cal = entropic_world_core::temporal::Calendar::default();
+    /// assert_eq!(cal.get_month_name(1), Some("January"));
+    /// assert_eq!(cal.get_month_name(12), Some("December"));
+    /// assert_eq!(cal.get_month_name(13), None);
+    /// ```
     pub fn get_month_name(&self, month: u8) -> Option<&str> {
         if month >= 1 && (month as usize) <= self.month_names.len() {
             Some(&self.month_names[month as usize - 1])
@@ -52,6 +84,19 @@ impl Calendar {
         }
     }
 
+    /// Maps a 1-based month number to its season name (quarters: 1–3 → Spring, 4–6 → Summer, 7–9 → Fall, 10–12 → Winter).
+    ///
+    /// # Returns
+    /// `Some(&str)` with the season name for the given month, `None` if the calendar has no season names.
+    /// This function will panic if `month == 0` due to unsigned subtraction.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let cal = Calendar::default();
+    /// assert_eq!(cal.get_season(1), Some("Spring"));
+    /// assert_eq!(cal.get_season(6), Some("Summer"));
+    /// ```
     pub fn get_season(&self, month: u8) -> Option<&str> {
         let season_index = ((month as usize - 1) / 3) % self.season_names.len();
         self.season_names.get(season_index).map(|s| s.as_str())

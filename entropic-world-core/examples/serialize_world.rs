@@ -1,6 +1,15 @@
 use entropic_world_core::world::{World, WorldConfig};
 use entropic_world_core::serialization::{serialize_to_json, deserialize_from_json};
 
+/// Runs a self-contained example that builds a World, advances it, serializes to JSON,
+/// deserializes it back, and verifies that key world metadata and chunk counts match.
+///
+/// # Examples
+///
+/// ```no_run
+/// // Execute the example program; it prints progress and verification results to stdout.
+/// crate::main();
+/// ```
 fn main() {
     println!("=== World Serialization Example ===\n");
 
