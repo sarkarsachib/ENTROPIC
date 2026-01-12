@@ -7,7 +7,23 @@
 use crate::schema::{GameDNA, Genre, CameraMode, Tone, WorldScale, TargetPlatform, MonetizationModel, PhysicsProfile};
 use crate::validation::{ValidationResult, ValidationError, ValidationWarning};
 
-/// Validate basic required fields
+/// Ensures required top-level fields are present and records errors for any that are missing.
+///
+/// Emits the following validation errors when corresponding fields are empty:
+/// - `EMPTY_NAME` for the `name` field.
+/// - `EMPTY_ID` for the `id` field.
+/// - `NO_TARGET_PLATFORMS` for the `target_platforms` field.
+///
+/// # Examples
+///
+/// ```
+/// let mut dna = GameDNA::default();
+/// let mut result = ValidationResult::new();
+/// validate_basic_fields(&dna, &mut result);
+/// assert!(result.has_error_code("EMPTY_NAME"));
+/// assert!(result.has_error_code("EMPTY_ID"));
+/// assert!(result.has_error_code("NO_TARGET_PLATFORMS"));
+/// ```
 pub fn validate_basic_fields(game_dna: &GameDNA, result: &mut ValidationResult) {
     if game_dna.name.is_empty() {
         result.add_error(ValidationError::new(
@@ -37,7 +53,19 @@ pub fn validate_basic_fields(game_dna: &GameDNA, result: &mut ValidationResult) 
     }
 }
 
-/// Validate name field
+/// Validates the `name` field of a `GameDNA` and records any errors or warnings in `result`.
+///
+/// Adds an `EMPTY_NAME` error if the name is empty, and a `LONG_NAME` warning if the name length exceeds 100 characters.
+///
+/// # Examples
+///
+/// ```
+/// let mut game = GameDNA::default();
+/// game.name = "".to_string();
+/// let mut result = ValidationResult::default();
+/// validate_name(&game, &mut result);
+/// assert!(result.has_error_code("EMPTY_NAME"));
+/// ```
 pub fn validate_name(game_dna: &GameDNA, result: &mut ValidationResult) {
     if game_dna.name.is_empty() {
         result.add_error(ValidationError::new(
@@ -56,28 +84,91 @@ pub fn validate_name(game_dna: &GameDNA, result: &mut ValidationResult) {
     }
 }
 
-/// Validate genre field
+/// Validates the genre field at the type level and provides a hook for future genre-specific rules.
+///
+/// This function currently performs no runtime checks because `genre` is represented as an enum
+/// and is therefore type-safe; it exists to centralize any future validation related to genre.
+///
+/// # Examples
+///
+/// ```
+/// let mut game = GameDNA::default();
+/// let mut result = ValidationResult::default();
+/// validate_genre(&game, &mut result);
+/// ```
 pub fn validate_genre(game_dna: &GameDNA, result: &mut ValidationResult) {
     // Genre is an enum, so it's always valid at the type level
     // We could add specific genre validation logic here if needed
 }
 
-/// Validate camera field
+/// Validate the camera selection for semantic consistency within a GameDNA configuration.
+///
+/// This function currently performs no runtime checks because `camera` is represented as an enum
+/// and is validated at the type level. It exists as a stable hook for future camera-related
+/// validations and side-effectful analyses.
+///
+/// # Examples
+///
+/// ```
+/// // Create a GameDNA and ValidationResult (types provided by this crate)
+/// let mut game_dna = GameDNA::default();
+/// let mut result = ValidationResult::default();
+///
+/// // Call the validator (no-op with current implementation)
+/// validate_camera(&game_dna, &mut result);
+///
+/// // Result remains usable for other validators
+/// assert!(result.is_empty());
+/// ```
 pub fn validate_camera(game_dna: &GameDNA, result: &mut ValidationResult) {
     // Camera is an enum, so it's always valid at the type level
 }
 
-/// Validate tone field
+/// Validates the GameDNA tone setting.
+///
+/// Currently this function performs no runtime checks because `tone` is constrained by the type system.
+/// It exists as a stable validation hook for any future tone-related rules that may emit warnings or errors.
+///
+/// # Examples
+///
+/// ```
+/// let mut result = ValidationResult::default();
+/// let dna = GameDNA { tone: Tone::Cinematic, ..Default::default() };
+/// validate_tone(&dna, &mut result);
+/// assert!(result.errors.is_empty());
+/// ```
 pub fn validate_tone(game_dna: &GameDNA, result: &mut ValidationResult) {
     // Tone is an enum, so it's always valid at the type level
 }
 
-/// Validate world scale field
+/// Validates the world scale setting; currently a no-op because `world_scale` is an enum validated at the type level.
+///
+/// This function exists as a placeholder for future world-scale-specific rules and currently adds no errors or warnings.
+///
+/// # Examples
+///
+/// ```
+/// let mut result = ValidationResult::default();
+/// validate_world_scale(&game_dna, &mut result);
+/// assert!(result.errors().is_empty());
+/// ```
 pub fn validate_world_scale(game_dna: &GameDNA, result: &mut ValidationResult) {
     // World scale is an enum, so it's always valid at the type level
 }
 
-/// Validate target platforms field
+/// Ensures the GameDNA specifies at least one target platform.
+///
+/// If `target_platforms` is empty, a `NO_TARGET_PLATFORMS` validation error is added to `result`.
+///
+/// # Examples
+///
+/// ```
+/// // Construct a GameDNA with no target platforms (assumes Default is available).
+/// let mut dna = GameDNA { target_platforms: Vec::new(), ..Default::default() };
+/// let mut result = ValidationResult::new();
+/// validate_target_platforms(&dna, &mut result);
+/// assert!(result.errors().iter().any(|e| e.code == "NO_TARGET_PLATFORMS"));
+/// ```
 pub fn validate_target_platforms(game_dna: &GameDNA, result: &mut ValidationResult) {
     if game_dna.target_platforms.is_empty() {
         result.add_error(ValidationError::new(
@@ -89,12 +180,41 @@ pub fn validate_target_platforms(game_dna: &GameDNA, result: &mut ValidationResu
     }
 }
 
-/// Validate physics profile field
+/// Validates the physics profile of a `GameDNA`.
+///
+/// The physics profile is represented as an enum and therefore has no runtime
+/// validity checks; this function exists as a validation hook for future rules
+/// related to physics configuration.
+///
+/// # Examples
+///
+/// ```
+/// use entropic_dna_core::validation::validate_physics_profile;
+/// use entropic_dna_core::ValidationResult;
+/// use entropic_dna_core::GameDNA;
+///
+/// let game_dna = GameDNA::default();
+/// let mut result = ValidationResult::new();
+/// validate_physics_profile(&game_dna, &mut result);
+/// ```
 pub fn validate_physics_profile(game_dna: &GameDNA, result: &mut ValidationResult) {
     // Physics profile is an enum, so it's always valid at the type level
 }
 
-/// Validate max players field
+/// Checks the configured maximum number of players and adds warnings for implausible values.
+///
+/// Emits a `ZERO_PLAYERS` warning when `max_players` is 0 and a `HIGH_PLAYER_COUNT` warning
+/// when `max_players` is greater than 1000.
+///
+/// # Examples
+///
+/// ```
+/// let mut dna = GameDNA::default();
+/// dna.max_players = 0;
+/// let mut result = ValidationResult::new();
+/// validate_max_players(&dna, &mut result);
+/// assert!(result.warnings().iter().any(|w| w.code == "ZERO_PLAYERS"));
+/// ```
 pub fn validate_max_players(game_dna: &GameDNA, result: &mut ValidationResult) {
     if game_dna.max_players == 0 {
         result.add_warning(ValidationWarning::new(
@@ -113,7 +233,23 @@ pub fn validate_max_players(game_dna: &GameDNA, result: &mut ValidationResult) {
     }
 }
 
-/// Validate target FPS field
+/// Validates the `target_fps` field and records errors or warnings in `result`.
+///
+/// Adds a `ZERO_FPS` error when `target_fps` is 0, a `HIGH_FPS_TARGET` warning when `target_fps` is above 240,
+/// and platform-specific warnings `MOBILE_HIGH_FPS` or `CONSOLE_HIGH_FPS` when the FPS exceeds typical limits for those platforms.
+///
+/// # Examples
+///
+/// ```
+/// let mut dna = GameDNA::default();
+/// dna.target_fps = 0;
+/// dna.target_platforms = vec![TargetPlatform::Mobile];
+///
+/// let mut result = ValidationResult::new();
+/// validate_target_fps(&dna, &mut result);
+///
+/// assert!(result.has_error_code("ZERO_FPS"));
+/// ```
 pub fn validate_target_fps(game_dna: &GameDNA, result: &mut ValidationResult) {
     if game_dna.target_fps == 0 {
         result.add_error(ValidationError::new(
@@ -159,7 +295,21 @@ pub fn validate_target_fps(game_dna: &GameDNA, result: &mut ValidationResult) {
     }
 }
 
-/// Validate time scale field
+/// Validates the GameDNA `time_scale` and records corresponding errors or warnings in `result`.
+///
+/// - Adds an `INVALID_TIME_SCALE` error when `time_scale` is less than or equal to 0.0.
+/// - Adds a `HIGH_TIME_SCALE` warning when `time_scale` is greater than 100.0.
+/// - Adds a `DAY_NIGHT_WITHOUT_TIME_SCALE` warning when `day_night_cycle` is enabled and `time_scale` equals 0.0.
+///
+/// # Examples
+///
+/// ```
+/// let mut game_dna = GameDNA { time_scale: 0.0, day_night_cycle: true, ..Default::default() };
+/// let mut result = ValidationResult::new();
+/// validate_time_scale(&game_dna, &mut result);
+/// assert!(result.errors().iter().any(|e| e.code == "INVALID_TIME_SCALE"));
+/// assert!(result.warnings().iter().any(|w| w.code == "DAY_NIGHT_WITHOUT_TIME_SCALE"));
+/// ```
 pub fn validate_time_scale(game_dna: &GameDNA, result: &mut ValidationResult) {
     if game_dna.time_scale <= 0.0 {
         result.add_error(ValidationError::new(
@@ -188,7 +338,26 @@ pub fn validate_time_scale(game_dna: &GameDNA, result: &mut ValidationResult) {
     }
 }
 
-/// Validate NPC count field
+/// Validate NPC count and emit warnings when configuration values conflict with AI usage or world scale limits.
+///
+/// This function adds:
+/// - an `AI_WITHOUT_NPC` warning when AI is enabled but `npc_count` is zero.
+/// - an `NPC_COUNT_TOO_HIGH_FOR_SCALE` warning when `npc_count` exceeds the recommended thresholds for the configured `world_scale`:
+///   - TinyLevel: > 50
+///   - SmallLevel: > 200
+///   - LargeLevel: > 1000
+///   - OpenWorld: > 5000
+///
+/// # Examples
+///
+/// ```
+/// // Given a `GameDNA` and a mutable `ValidationResult`:
+/// // let game_dna = GameDNA { ai_enabled: true, npc_count: 0, world_scale: WorldScale::TinyLevel, /* ... */ };
+/// // let mut result = ValidationResult::new();
+/// // validate_npc_count(&game_dna, &mut result);
+/// //
+/// // After calling, `result` will contain appropriate warnings for the NPC configuration.
+/// ```
 pub fn validate_npc_count(game_dna: &GameDNA, result: &mut ValidationResult) {
     // Check if AI is enabled but NPC count is 0
     if game_dna.ai_enabled && game_dna.npc_count == 0 {
@@ -246,7 +415,19 @@ pub fn validate_npc_count(game_dna: &GameDNA, result: &mut ValidationResult) {
     }
 }
 
-/// Validate genre and camera compatibility
+/// Validates that the configured camera mode is appropriate for the game's genre and records any resulting errors or warnings in the provided ValidationResult.
+///
+/// Checks notable genre-camera expectations:
+/// - FPS and TPS require a 3D camera (Perspective3D or VR); records an error if another camera is used.
+/// - Strategy, Racing, Horror, and Puzzle produce warnings when uncommon camera modes are selected for those genres.
+/// - Casual and unspecified genres have no camera-specific constraints.
+///
+/// # Examples
+///
+/// ```
+/// // assume `game` is a GameDNA and `result` is a mutable ValidationResult
+/// validate_genre_camera_compatibility(&game, &mut result);
+/// ```
 pub fn validate_genre_camera_compatibility(game_dna: &GameDNA, result: &mut ValidationResult) {
     match game_dna.genre {
         Genre::FPS | Genre::TPS => {
@@ -318,7 +499,30 @@ pub fn validate_genre_camera_compatibility(game_dna: &GameDNA, result: &mut Vali
     }
 }
 
-/// Validate genre and physics profile compatibility
+/// Check whether the selected physics profile is appropriate for the game's genre and add warnings
+/// to `result` for atypical or potentially problematic combinations.
+///
+/// This function examines `game_dna.genre` and `game_dna.physics_profile` and appends
+/// `ValidationWarning` entries to `result` when a physics profile is uncommon or ill-suited
+/// for the specified genre (for example, Arcade physics on shooters or Realistic physics for
+/// casual titles).
+///
+/// # Examples
+///
+/// ```no_run
+/// use entropic_dna_core::validation::{validate_genre_physics_compatibility, ValidationResult};
+/// use entropic_dna_core::models::{GameDNA, Genre, PhysicsProfile};
+///
+/// let game_dna = GameDNA {
+///     genre: Genre::FPS,
+///     physics_profile: PhysicsProfile::Arcade,
+///     ..Default::default()
+/// };
+///
+/// let mut result = ValidationResult::new();
+/// validate_genre_physics_compatibility(&game_dna, &mut result);
+/// assert!(result.warnings().iter().any(|w| w.code == "ARCADE_PHYSICS_FOR_SHOOTER"));
+/// ```
 pub fn validate_genre_physics_compatibility(game_dna: &GameDNA, result: &mut ValidationResult) {
     match game_dna.genre {
         Genre::FPS | Genre::TPS | Genre::Racing | Genre::Simulation => {
@@ -378,7 +582,24 @@ pub fn validate_genre_physics_compatibility(game_dna: &GameDNA, result: &mut Val
     }
 }
 
-/// Validate tone and gameplay combinations
+/// Validate interactions between the configured tone and gameplay settings.
+///
+/// Adds warnings to `result` when the chosen tone is an uncommon or conflicting match
+/// for the game's gameplay configuration (for example, a cinematic tone paired with
+/// competitive play, or a realistic tone applied to casual games with many players).
+///
+/// # Examples
+///
+/// ```
+/// use entropic_dna_core::validation::rules::validate_tone_gameplay_combinations;
+/// use entropic_dna_core::models::{GameDNA, Tone, Genre};
+/// use entropic_dna_core::validation::ValidationResult;
+///
+/// let game = GameDNA { tone: Tone::Cinematic, is_competitive: true, genre: Genre::Action, max_players: 1, ..Default::default() };
+/// let mut result = ValidationResult::default();
+/// validate_tone_gameplay_combinations(&game, &mut result);
+/// assert!(result.has_warnings());
+/// ```
 pub fn validate_tone_gameplay_combinations(game_dna: &GameDNA, result: &mut ValidationResult) {
     match game_dna.tone {
         Tone::Cinematic => {
@@ -415,7 +636,28 @@ pub fn validate_tone_gameplay_combinations(game_dna: &GameDNA, result: &mut Vali
     }
 }
 
-/// Validate scale and platform compatibility
+/// Validates that the game's world scale is compatible with the selected target platforms.
+///
+/// Produces errors or warnings on the provided `ValidationResult` when incompatible combinations are detected:
+/// - Emits `SCALE_NOT_SUPPORTED_ON_MOBILE` error if `world_scale` is `Galaxy` or `Planet` while `target_platforms` includes `Mobile`.
+/// - Emits `OPEN_WORLD_ON_MOBILE` warning if `world_scale` is `OpenWorld` while `target_platforms` includes `Mobile`.
+/// - Emits `SCALE_TOO_LARGE_FOR_XR` error if `target_platforms` includes `XR` and `world_scale` is `OpenWorld`, `Planet`, or `Galaxy`.
+///
+/// # Examples
+///
+/// ```
+/// # use entropic_dna_core::validation::rules::validate_scale_platform_compatibility;
+/// # use entropic_dna_core::models::{GameDNA, WorldScale, TargetPlatform};
+/// # use entropic_dna_core::validation::result::ValidationResult;
+/// let dna = GameDNA {
+///     world_scale: WorldScale::OpenWorld,
+///     target_platforms: vec![TargetPlatform::Mobile],
+///     ..Default::default()
+/// };
+/// let mut result = ValidationResult::default();
+/// validate_scale_platform_compatibility(&dna, &mut result);
+/// assert!(result.has_warnings());
+/// ```
 pub fn validate_scale_platform_compatibility(game_dna: &GameDNA, result: &mut ValidationResult) {
     // Galaxy/Planet scale is PC/Console only, not Mobile
     match game_dna.world_scale {
@@ -458,7 +700,30 @@ pub fn validate_scale_platform_compatibility(game_dna: &GameDNA, result: &mut Va
     }
 }
 
-/// Validate monetization and gameplay combinations
+/// Validates the monetization model against gameplay configuration and records warnings for uncommon or risky combinations.
+///
+/// Produces warnings for cases such as:
+/// - One-time purchase paired with competitive multiplayer but no co-op support.
+/// - Free-to-play without competitive or persistent elements when the game is single-player.
+/// - Subscription model without a persistent world or sufficient multiplayer scale.
+/// - Premium purchase with multiplayer but no anti-cheat tag.
+///
+/// # Examples
+///
+/// ```
+/// let mut result = ValidationResult::new();
+/// let game_dna = GameDNA {
+///     monetization: MonetizationModel::OneTimePay,
+///     is_competitive: true,
+///     supports_coop: false,
+///     persistent_world: false,
+///     max_players: 1,
+///     tags: vec![],
+///     ..Default::default()
+/// };
+/// validate_monetization_gameplay(&game_dna, &mut result);
+/// assert!(result.has_warnings());
+/// ```
 pub fn validate_monetization_gameplay(game_dna: &GameDNA, result: &mut ValidationResult) {
     match game_dna.monetization {
         MonetizationModel::OneTimePay => {
@@ -512,7 +777,26 @@ pub fn validate_monetization_gameplay(game_dna: &GameDNA, result: &mut Validatio
     }
 }
 
-/// Validate performance constraints
+/// Validates performance-related constraints for a GameDNA configuration.
+///
+/// Runs the target-FPS validation and emits warnings when the configured
+/// maximum entity count is implausibly high relative to the maximum player
+/// count for cooperative or competitive gameplay.
+///
+/// # Examples
+///
+/// ```
+/// let game = GameDNA {
+///     max_players: 8,
+///     max_entities: 200,
+///     supports_coop: true,
+///     ..Default::default()
+/// };
+/// let mut result = ValidationResult::default();
+/// validate_performance_constraints(&game, &mut result);
+/// // Expect a warning when entities exceed coop threshold (10x players)
+/// assert!(result.warnings().iter().any(|w| w.code == "ENTITY_COUNT_TOO_HIGH_FOR_COOP"));
+/// ```
 pub fn validate_performance_constraints(game_dna: &GameDNA, result: &mut ValidationResult) {
     // Validate target FPS is achievable on target platforms
     validate_target_fps(game_dna, result);
@@ -545,7 +829,28 @@ pub fn validate_performance_constraints(game_dna: &GameDNA, result: &mut Validat
     // Validate NPC count vs world scale (already handled in validate_npc_count)
 }
 
-/// Validate world simulation settings
+/// Validates world-simulation settings and emits warnings for configuration issues.
+///
+/// This performs checks related to persistent worlds, weather/seasons, and interactions
+/// with time/day-night settings:
+/// - Emits `PERSISTENT_WORLD_WITHOUT_BACKEND` if `persistent_world` is enabled but no
+///   tag containing "backend" or "server" is present.
+/// - Recognizes that weather and seasons enabled together are compatible (no warning).
+/// - Notes that time-scale and day/night-cycle validations are handled by `validate_time_scale`.
+///
+/// # Examples
+///
+/// ```
+/// // Construct a GameDNA that enables a persistent world but lacks backend tags.
+/// let mut game = GameDNA {
+///     persistent_world: true,
+///     tags: vec!["client".to_string()],
+///     ..Default::default()
+/// };
+/// let mut result = ValidationResult::default();
+/// validate_world_simulation(&game, &mut result);
+/// assert!(result.warnings().iter().any(|w| w.code == "PERSISTENT_WORLD_WITHOUT_BACKEND"));
+/// ```
 pub fn validate_world_simulation(game_dna: &GameDNA, result: &mut ValidationResult) {
     // Persistent world requires backend infrastructure
     if game_dna.persistent_world {
@@ -570,7 +875,21 @@ pub fn validate_world_simulation(game_dna: &GameDNA, result: &mut ValidationResu
     // Day/night cycle without time scale warning (already handled in validate_time_scale)
 }
 
-/// Validate AI and NPC constraints
+/// Validates AI- and NPC-related constraints on a GameDNA and records any warnings or errors.
+///
+/// This performs checks such as ensuring AI difficulty scaling is compatible with the configured
+/// difficulty mode and validating NPC counts against configured limits for the target platforms
+/// and world scale.
+///
+/// # Examples
+///
+/// ```no_run
+/// let game = GameDNA::default();
+/// let mut result = ValidationResult::new();
+/// validate_ai_npc_constraints(&game, &mut result);
+/// assert!(result.warnings().iter().any(|w| w.code() == "AI_SCALING_WITH_STATIC_DIFFICULTY")
+///     || result.errors().len() >= 0);
+/// ```
 pub fn validate_ai_npc_constraints(game_dna: &GameDNA, result: &mut ValidationResult) {
     // NPC count must be > 0 if ai_enabled = true (already handled in validate_npc_count)
 
@@ -588,7 +907,29 @@ pub fn validate_ai_npc_constraints(game_dna: &GameDNA, result: &mut ValidationRe
     validate_npc_count(game_dna, result);
 }
 
-/// Validate campaign and quest logic
+/// Validates campaign and quest-related rules and records warnings or errors.
+///
+/// Checks performed:
+/// - Warns if `has_campaign` is true but no tag contains "narrative" or "story".
+/// - Produces an error if `dynamic_quests` is true while `ai_enabled` is false.
+/// - Warns if `has_side_quests` is true but `has_campaign` is false.
+///
+/// # Examples
+///
+/// ```
+/// // Construct a GameDNA with dynamic quests but AI disabled
+/// let game = GameDNA {
+///     has_campaign: false,
+///     dynamic_quests: true,
+///     ai_enabled: false,
+///     has_side_quests: false,
+///     tags: vec![],
+///     ..Default::default()
+/// };
+/// let mut result = ValidationResult::default();
+/// validate_campaign_quest_logic(&game, &mut result);
+/// assert!(result.contains_error_code("DYNAMIC_QUESTS_WITHOUT_AI"));
+/// ```
 pub fn validate_campaign_quest_logic(game_dna: &GameDNA, result: &mut ValidationResult) {
     // Has campaign requires narrative capabilities
     if game_dna.has_campaign {

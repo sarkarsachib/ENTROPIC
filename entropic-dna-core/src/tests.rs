@@ -790,6 +790,18 @@ mod error_tests {
 }
 
 // Helper function to calculate approximate test coverage
+/// Prints a faux test coverage summary to standard output.
+///
+/// The summary lists several test module categories with pass/fail icons and
+/// an estimated overall coverage percentage based on whether all listed
+/// modules are marked covered.
+///
+/// # Examples
+///
+/// ```
+/// // In tests you can invoke this helper to emit a coverage summary to stdout.
+/// print_coverage_summary();
+/// ```
 #[cfg(test)]
 pub fn print_coverage_summary() {
     println!("\n📊 Test Coverage Summary:");
@@ -1091,6 +1103,26 @@ mod validation_tests {
         assert!(unlocked.get_config().is_some());
     }
     
+    /// Verifies that LockedGameDNABuilder can validate a GameDNA and publish it as a locked, integrity-verified LockedGameDNA.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let game = GameDNA::minimal("Test".to_string(), Genre::FPS, vec![TargetPlatform::PC]);
+    /// let builder = LockedGameDNABuilder::new(game);
+    ///
+    /// // Validate should succeed
+    /// let result = builder.validate();
+    /// assert!(result.is_valid);
+    ///
+    /// // Publish should succeed and produce a locked game with valid integrity
+    /// let publish_result = builder.publish();
+    /// assert!(publish_result.is_ok());
+    ///
+    /// let locked_game = publish_result.unwrap();
+    /// assert!(locked_game.is_locked);
+    /// assert!(locked_game.verify_integrity());
+    /// ```
     #[test]
     fn test_locked_game_dna_builder() {
         let game = GameDNA::minimal("Test".to_string(), Genre::FPS, vec![TargetPlatform::PC]);
