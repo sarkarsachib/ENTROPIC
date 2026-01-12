@@ -1,0 +1,23 @@
+{
+  "name": "@entropic/wasm-validator",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "echo 'build via ./build.sh for wasm-pack output'",
+    "build:wasm": "./build.sh",
+    "lint": "echo 'lint skipped'",
+    "typecheck": "tsc --noEmit",
+    "test": "echo 'wasm tests handled by rust'"
+  },
+  "dependencies": {
+    "@entropic/types": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "workspace:*"
+  }
+}
