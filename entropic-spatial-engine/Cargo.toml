@@ -1,0 +1,56 @@
+[package]
+name = "entropic-spatial-engine"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.70"
+authors = ["Entropic Engine Team"]
+description = "High-performance spatial engine for chunk streaming, terrain generation, and spatial queries"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/entropic-engine/entropic-spatial-engine"
+readme = "README.md"
+keywords = ["game", "spatial", "chunk", "terrain", "pathfinding"]
+categories = ["game-development", "simulation"]
+
+[dependencies]
+entropic-world-core = { path = "../entropic-world-core", version = "0.1.0" }
+noise = "0.9"
+tokio = { version = "1.35", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "1.0"
+rayon = "1.8"
+
+[dev-dependencies]
+criterion = "0.5"
+
+[lib]
+name = "entropic_spatial_engine"
+path = "src/lib.rs"
+
+[[example]]
+name = "generate_world"
+path = "examples/generate_world.rs"
+
+[[example]]
+name = "stream_chunks"
+path = "examples/stream_chunks.rs"
+
+[[example]]
+name = "spatial_queries"
+path = "examples/spatial_queries.rs"
+
+[[example]]
+name = "pathfinding_demo"
+path = "examples/pathfinding_demo.rs"
+
+[[bench]]
+name = "chunk_loading"
+harness = false
+
+[[bench]]
+name = "spatial_queries"
+harness = false
+
+[[bench]]
+name = "pathfinding"
+harness = false
